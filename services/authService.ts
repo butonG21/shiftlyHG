@@ -14,10 +14,17 @@ const apiClient = axios.create({
   },
 });
 
+// Storage keys
+const STORAGE_KEYS = {
+  TOKEN: 'token',
+  LOGIN_TIME: 'loginTime',
+  USER_PROFILE: 'userProfile',
+} as const;
+
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('token');
+    const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,8 +41,9 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
       // Token expired, clear storage and redirect to login
-      await AsyncStorage.multiRemove(['token', 'loginTime', 'userProfile']);
-      delete axios.defaults.headers.common['Authorization'];
+      await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
+      // Clear the authorization header from the apiClient instance
+      delete apiClient.defaults.headers.common['Authorization'];
     }
     return Promise.reject(error);
   }
@@ -129,7 +137,7 @@ export const getProfile = async (): Promise<User> => {
     return response.data;
   } catch (error) {
     console.error('Get profile error:', error);
-    handleApiError(error);
+    throw handleApiError(error);
   }
 };
 

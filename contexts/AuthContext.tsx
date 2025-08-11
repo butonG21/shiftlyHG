@@ -1,29 +1,8 @@
 // contexts/AuthContext.tsx
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as authService from '../services/authService';
-import axios from 'axios';
-
-// Enhanced User type
-export interface User {
-  uid: string;
-  name: string;
-  position: string;
-  email?: string | null;
-  location?: string;
-  photoURL?: string;
-  department?: string;
-  phoneNumber?: string;
-  joinDate?: string;
-  schedule?: ScheduleItem[];
-}
-
-export interface ScheduleItem {
-  date: string;
-  shift: string;
-  location?: string;
-  notes?: string;
-}
+import { User, ScheduleItem } from '../types/user';
 
 // Enhanced AuthContext type
 interface AuthContextType {
@@ -33,6 +12,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  manualRefreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<void>;
   clearError: () => void;
   error: string | null;
@@ -40,13 +20,41 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Storage keys
+const STORAGE_KEYS = {
+  TOKEN: 'token',
+  LOGIN_TIME: 'loginTime',
+  USER_PROFILE: 'userProfile',
+} as const;
+
+// Token expiry time in hours
+const TOKEN_EXPIRY_HOURS = 24;
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Enhanced login function with better error handling
+  // Helper function to clear all auth data
+  const clearAuthData = useCallback(async (): Promise<void> => {
+    console.log('Clearing auth data...');
+    await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
+    setUser(null);
+    setIsAuthenticated(false);
+    setError(null);
+    console.log('Auth data cleared');
+  }, []);
+
+  // Helper function to check if token is expired
+  const isTokenExpired = useCallback((loginTime: string): boolean => {
+    const loginDate = new Date(loginTime);
+    const now = new Date();
+    const hoursSinceLogin = (now.getTime() - loginDate.getTime()) / (1000 * 60 * 60);
+    return hoursSinceLogin > TOKEN_EXPIRY_HOURS;
+  }, []);
+
+  // Enhanced login function with simplified error handling
   const login = async (username: string, password: string): Promise<void> => {
     try {
       setLoading(true);
@@ -62,151 +70,140 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const data = await authService.loginUser(username.trim(), password);
       console.log('Login successful, received token');
 
-      // Store token
-      await AsyncStorage.setItem('token', data.token);
-      await AsyncStorage.setItem('loginTime', new Date().toISOString());
+      // Store token and login time
+      await AsyncStorage.multiSet([
+        [STORAGE_KEYS.TOKEN, data.token],
+        [STORAGE_KEYS.LOGIN_TIME, new Date().toISOString()],
+      ]);
       
-      // Set default authorization header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-
       // Get user profile
       const profile = await authService.getProfile();
       console.log('Profile loaded successfully');
       
+      // Cache profile
+      await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+      
+      // Set user state and authentication status
       setUser(profile);
       setIsAuthenticated(true);
+      setError(null);
+      
+      console.log('Login completed successfully, user authenticated');
     } catch (error: any) {
       console.error('Login error:', error);
       
       // Clear any stored data on error
-      await AsyncStorage.multiRemove(['token', 'loginTime']);
-      delete axios.defaults.headers.common['Authorization'];
+      await clearAuthData();
       
-      setUser(null);
-      setIsAuthenticated(false);
-
-      // Enhanced error messages
-      if (error.response) {
-        const status = error.response.status;
-        const serverMessage = error.response.data?.message || error.response.data?.error;
-        
-        switch (status) {
-          case 401:
-            throw new Error('Username atau password salah. Silakan coba lagi.');
-          case 403:
-            throw new Error('Akun Anda tidak memiliki akses. Hubungi administrator.');
-          case 404:
-            throw new Error('Server tidak ditemukan. Periksa koneksi internet Anda.');
-          case 429:
-            throw new Error('Terlalu banyak percobaan login. Coba lagi dalam beberapa menit.');
-          case 500:
-            throw new Error('Terjadi kesalahan server. Coba lagi nanti.');
-          default:
-            throw new Error(serverMessage || `Terjadi kesalahan (${status}). Silakan coba lagi.`);
-        }
-      } else if (error.request) {
-        throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
-      } else if (error.code === 'NETWORK_ERROR') {
-        throw new Error('Koneksi internet bermasalah. Silakan coba lagi.');
-      } else {
-        throw new Error(error.message || 'Terjadi kesalahan tidak terduga. Silakan coba lagi.');
-      }
+      // Set error message
+      const errorMessage = error.message || 'Terjadi kesalahan tidak terduga. Silakan coba lagi.';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   // Enhanced logout function
-  const logout = async (): Promise<void> => {
+  const logout = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       
       // Call logout API if available
       try {
-        await authService.logoutUser?.();
+        await authService.logoutUser();
       } catch (logoutError) {
         console.warn('Logout API call failed:', logoutError);
         // Continue with local logout even if API fails
       }
 
-      // Clear local storage
-      await AsyncStorage.multiRemove(['token', 'loginTime', 'userProfile']);
-      
-      // Clear axios headers
-      delete axios.defaults.headers.common['Authorization'];
-      
-      // Reset state
-      setUser(null);
-      setIsAuthenticated(false);
-      setError(null);
-      
+      await clearAuthData();
       console.log('User logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
       // Force logout even on error
-      setUser(null);
-      setIsAuthenticated(false);
+      await clearAuthData();
     } finally {
       setLoading(false);
     }
-  };
+  }, [clearAuthData]);
 
-  // Refresh user profile
-  const refreshProfile = async (): Promise<void> => {
+  // Refresh user profile - simplified to prevent loops
+  const refreshProfile = useCallback(async (): Promise<void> => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
       if (!token) {
         throw new Error('No authentication token found');
       }
 
+      console.log('Refreshing profile from server...');
       const profile = await authService.getProfile();
-      setUser(profile);
+      console.log('Profile refreshed successfully');
       
-      // Cache profile
-      await AsyncStorage.setItem('userProfile', JSON.stringify(profile));
+      setUser(profile);
+      setIsAuthenticated(true);
+      
+      // Cache updated profile
+      await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
     } catch (error) {
       console.error('Failed to refresh profile:', error);
       // If profile refresh fails, logout user
       await logout();
     }
-  };
+  }, [logout]);
 
   // Update user profile
-  const updateProfile = async (updates: Partial<User>): Promise<void> => {
+  const updateProfile = useCallback(async (updates: Partial<User>): Promise<void> => {
     try {
       if (!user) throw new Error('No user logged in');
 
-      const updatedProfile = await authService.updateProfile?.(updates);
+      const updatedProfile = await authService.updateProfile(updates);
       
       if (updatedProfile) {
         setUser(updatedProfile);
-        await AsyncStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+        await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(updatedProfile));
       } else {
         // If update API returns nothing, merge with current user
         const newUser = { ...user, ...updates };
         setUser(newUser);
-        await AsyncStorage.setItem('userProfile', JSON.stringify(newUser));
+        await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(newUser));
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
       throw error;
     }
-  };
+  }, [user]);
+
+  // Manual refresh profile function for components to call when needed
+  const manualRefreshProfile = useCallback(async (): Promise<void> => {
+    if (!isAuthenticated || !user) {
+      console.log('Cannot refresh profile: user not authenticated');
+      return;
+    }
+    
+    try {
+      console.log('Manual profile refresh requested...');
+      await refreshProfile();
+      console.log('Manual profile refresh completed');
+    } catch (error) {
+      console.error('Manual profile refresh failed:', error);
+    }
+  }, [isAuthenticated, user, refreshProfile]);
 
   // Clear error
-  const clearError = (): void => {
+  const clearError = useCallback((): void => {
     setError(null);
-  };
+  }, []);
 
   // Check authentication status on app start
-  const checkAuthStatus = async (): Promise<void> => {
+  const checkAuthStatus = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       
       const [token, loginTime, cachedProfile] = await AsyncStorage.multiGet([
-        'token',
-        'loginTime',
-        'userProfile'
+        STORAGE_KEYS.TOKEN,
+        STORAGE_KEYS.LOGIN_TIME,
+        STORAGE_KEYS.USER_PROFILE,
       ]);
 
       const tokenValue = token[1];
@@ -215,25 +212,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (!tokenValue) {
         console.log('No token found, user not authenticated');
+        setUser(null);
+        setIsAuthenticated(false);
         return;
       }
 
-      // Check token expiry (optional - if you have token expiry logic)
-      if (loginTimeValue) {
-        const loginDate = new Date(loginTimeValue);
-        const now = new Date();
-        const hoursSinceLogin = (now.getTime() - loginDate.getTime()) / (1000 * 60 * 60);
-        
-        // If logged in more than 24 hours ago, force re-login
-        if (hoursSinceLogin > 24) {
-          console.log('Token expired, logging out');
-          await logout();
-          return;
-        }
+      // Check token expiry
+      if (loginTimeValue && isTokenExpired(loginTimeValue)) {
+        console.log('Token expired, logging out');
+        await logout();
+        return;
       }
-
-      // Set authorization header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${tokenValue}`;
 
       // Try to load cached profile first
       if (cachedProfileValue) {
@@ -241,21 +230,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const parsedProfile = JSON.parse(cachedProfileValue);
           setUser(parsedProfile);
           setIsAuthenticated(true);
-          console.log('Loaded cached profile');
+          console.log('Loaded cached profile, user authenticated');
         } catch (parseError) {
           console.warn('Failed to parse cached profile:', parseError);
+          // If cached profile is corrupted, try to get fresh profile
+          await refreshProfile();
         }
-      }
-
-      // Then refresh from server
-      try {
+      } else {
+        // No cached profile, get fresh from server
+        console.log('No cached profile, fetching from server...');
         await refreshProfile();
-      } catch (refreshError) {
-        console.warn('Failed to refresh profile from server:', refreshError);
-        // If we have cached profile, continue with that
-        if (!user && !cachedProfileValue) {
-          await logout();
-        }
       }
 
     } catch (error) {
@@ -264,22 +248,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setLoading(false);
     }
-  };
+  }, [isTokenExpired, logout, refreshProfile]);
 
   useEffect(() => {
     checkAuthStatus();
-  }, []);
+  }, []); // Only run once on mount
 
-  // Auto-refresh profile periodically (optional)
-  useEffect(() => {
-    if (!isAuthenticated || !user) return;
+  // Auto-refresh profile periodically (optional) - removed to prevent infinite loops
+  // useEffect(() => {
+  //   if (!isAuthenticated || !user) return;
 
-    const refreshInterval = setInterval(() => {
-      refreshProfile().catch(console.error);
-    }, 5 * 60 * 1000); // Refresh every 5 minutes
+  //   const refreshInterval = setInterval(() => {
+  //     refreshProfile().catch(console.error);
+  //   }, 5 * 60 * 1000); // Refresh every 5 minutes
 
-    return () => clearInterval(refreshInterval);
-  }, [isAuthenticated, user]);
+  //   return () => clearInterval(refreshInterval);
+  // }, [isAuthenticated, user, refreshProfile]);
 
   const contextValue: AuthContextType = {
     user,
@@ -288,6 +272,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     login,
     logout,
     refreshProfile,
+    manualRefreshProfile,
     updateProfile,
     clearError,
     error,
