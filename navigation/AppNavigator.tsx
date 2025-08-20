@@ -21,9 +21,9 @@ import Animated, {
   interpolate 
 } from 'react-native-reanimated';
 
-import LoginScreen from '../screens/LoginScreen';
-import HomeScreen from '../screens/HomeScreen';
-import { useAuth } from '../contexts/AuthContext';
+import LoginScreen from '../src/screens/LoginScreen';
+import HomeScreen from '../src/screens/HomeScreen';
+import { useAuth } from '../src/contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 

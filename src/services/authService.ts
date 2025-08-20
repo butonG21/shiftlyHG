@@ -1,16 +1,8 @@
-// services/authService.ts
+// src/services/authService.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User } from '../src/types/user';
-import apiClient, { ApiResponse, ApiError, extractApiData, handleApiError } from '../src/services/api';
-
-// Storage keys
-const STORAGE_KEYS = {
-  TOKEN: 'token',
-  LOGIN_TIME: 'loginTime',
-  USER_PROFILE: 'userProfile',
-} as const;
-
-
+import { User } from '../types/user';
+import apiClient, { ApiResponse, ApiError, extractApiData, handleApiError } from './api';
+import { STORAGE_KEYS } from '../constants/storage';
 
 // Login response interface matching new API format
 interface LoginData {
@@ -39,8 +31,6 @@ interface ProfileImageUploadData {
     fileId: string;
   };
 }
-
-
 
 // Auth service functions
 export const loginUser = async (username: string, password: string): Promise<LoginData> => {
@@ -101,16 +91,14 @@ export const getUserProfile = async (): Promise<User> => {
 
 export const updateProfile = async (profileData: Partial<User>): Promise<User> => {
   try {
+    console.log('Updating profile with data:', profileData);
     
     const response = await apiClient.put<ApiResponse<User>>('/users/me', profileData);
+    const userData = extractApiData(response);
     
-    // console.log('Profile update response:', response.data);
-    
-    const updatedUser = extractApiData(response);
-    
-    // Update stored profile
-    await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(updatedUser));
-    return updatedUser;
+    // Update stored profile data
+    await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(userData));
+    return userData;
   } catch (error) {
     console.error('Update profile error:', error);
     if (error instanceof Error) {
@@ -124,44 +112,36 @@ export const logoutUser = async (): Promise<void> => {
   try {
     console.log('Logging out user...');
     
-    // Call logout endpoint
-    await apiClient.post<ApiResponse<null>>('/auth/logout');
+    // Clear all stored data
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.TOKEN,
+      STORAGE_KEYS.LOGIN_TIME,
+      STORAGE_KEYS.USER_PROFILE,
+    ]);
     
-    console.log('Logout successful');
+    console.log('User logged out successfully');
   } catch (error) {
     console.error('Logout error:', error);
-    // Don't throw error for logout - we still want to clear local storage
-  } finally {
-    // Always clear local storage regardless of API call success
-    await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
-    console.log('Local storage cleared');
+    throw new Error('Failed to logout');
   }
 };
 
-// Verify token endpoint
 export const verifyToken = async (): Promise<boolean> => {
   try {
-    console.log('Verifying token...');
-    
-    await apiClient.get<ApiResponse<null>>('/auth/verify');
-    
-    console.log('Token verified successfully');
-    return true;
+    const response = await apiClient.get('/auth/verify');
+    return response.status === 200;
   } catch (error) {
-    console.error('Token verification error:', error);
+    console.error('Token verification failed:', error);
     return false;
   }
 };
 
-// Get user statistics
 export const getUserStats = async (): Promise<any> => {
   try {
-    // console.log('Fetching user statistics...');
+    console.log('Fetching user stats...');
     
-    const response = await apiClient.get<ApiResponse<any>>('/users/me/stats');
-    
-    const stats = extractApiData(response);
-    return stats;
+    const response = await apiClient.get<ApiResponse<any>>('/users/stats');
+    return extractApiData(response);
   } catch (error) {
     console.error('Get user stats error:', error);
     if (error instanceof Error) {
@@ -171,13 +151,11 @@ export const getUserStats = async (): Promise<any> => {
   }
 };
 
-// Delete profile image
 export const deleteProfileImage = async (): Promise<void> => {
   try {
     console.log('Deleting profile image...');
     
-    await apiClient.delete<ApiResponse<null>>('/users/profile/image');
-    
+    await apiClient.delete('/users/me/profile-image');
     console.log('Profile image deleted successfully');
   } catch (error) {
     console.error('Delete profile image error:', error);
@@ -188,21 +166,15 @@ export const deleteProfileImage = async (): Promise<void> => {
   }
 };
 
-// Get profile image
-export const getProfileImage: (size?: 'thumbnail' | 'small' | 'medium' | 'original') => Promise<string> = async (size = 'thumbnail') => {
+export const getProfileImage = async (size: 'thumbnail' | 'small' | 'medium' | 'original' = 'thumbnail'): Promise<string> => {
   try {
-    console.log('Getting profile image...');
+    console.log(`Fetching profile image (${size})...`);
     
-    const response = await apiClient.get<ApiResponse<{ imageUrl: string }>>(`/users/profile/image?size=${size}`);
-    
-    const imageData = extractApiData(response);
-    return imageData.imageUrl;
+    const response = await apiClient.get(`/users/me/profile-image?size=${size}`);
+    return response.data.imageUrl || '';
   } catch (error) {
     console.error('Get profile image error:', error);
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw handleApiError(error as ApiError);
+    return '';
   }
 };
 
@@ -216,16 +188,19 @@ export const uploadProfilePhoto = async (imageUri: string): Promise<ProfileImage
       type: 'image/jpeg',
       name: 'profile.jpg',
     } as any);
-    
-    const response = await apiClient.post<ApiResponse<ProfileImageUploadData>>('/users/profile/image/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-    console.log('Profile photo upload response:', response.data);
-    
+
+    const response = await apiClient.post<ApiResponse<ProfileImageUploadData>>(
+      '/users/me/profile-image',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
     const uploadData = extractApiData(response);
+    console.log('Profile photo uploaded successfully');
     return uploadData;
   } catch (error) {
     console.error('Upload profile photo error:', error);
@@ -236,5 +211,4 @@ export const uploadProfilePhoto = async (imageUri: string): Promise<ProfileImage
   }
 };
 
-// Export API client for direct use if needed
 export { apiClient };

@@ -1,45 +1,29 @@
-// components/ProfileHeader.tsx
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+// src/components/ui/ProfileHeader.tsx
+import React from 'react';
+import { View, StyleSheet, Image, Dimensions } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../contexts/AuthContext';
-import moment from 'moment';
-import 'moment/locale/id';
+import { useCurrentTime, useAuth } from '../../hooks';
+import { getGreeting, formatDate, formatTime } from '../../utils/dateTime';
+import { COLORS } from '../../constants/colors';
 
 const { width } = Dimensions.get('window');
 
 const ProfileHeader: React.FC = () => {
   const { user } = useAuth();
-  const [currentTime, setCurrentTime] = useState(moment());
+  const currentTime = useCurrentTime();
 
-  useEffect(() => {
-    moment.locale('id');
-    const timer = setInterval(() => {
-      setCurrentTime(moment());
-    }, 30000); // Update setiap 30 detik untuk efisiensi
-    return () => clearInterval(timer);
-  }, []);
-
-  const greeting = () => {
-    const hour = currentTime.hour();
-    if (hour < 10) return "Selamat Pagi";
-    if (hour < 15) return "Selamat Siang";
-    if (hour < 18) return "Selamat Sore";
-    return "Selamat Malam";
-  };
-
-  const formatDate = currentTime.format('dddd, DD MMMM YYYY');
-  const formatTime = currentTime.format('HH:mm');
+  const greeting = getGreeting();
+  const formattedDate = formatDate(currentTime);
+  const formattedTime = formatTime(currentTime);
 
   return (
     <LinearGradient
-      colors={['#00425A', '#005C7A', '#007B9A']}
+      colors={COLORS.gradient.primary}
+      style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={styles.container}
     >
       {/* Background Pattern */}
       <View style={styles.backgroundPattern}>
@@ -53,70 +37,71 @@ const ProfileHeader: React.FC = () => {
         {/* Date and Time Row */}
         <View style={styles.dateTimeRow}>
           <View style={styles.dateContainer}>
-            <MaterialCommunityIcons name="calendar-outline" size={18} color="#F9B233" />
-            <Text style={styles.dateText}>{formatDate}</Text>
+            <MaterialCommunityIcons name="calendar" size={18} color="#B8E6FF" />
+            <Text style={styles.dateText}>{formattedDate}</Text>
           </View>
-          
-          <BlurView intensity={20} tint="light" style={styles.timeContainer}>
-            <MaterialCommunityIcons name="clock-outline" size={16} color="#FFFFFF" />
-            <Text style={styles.timeText}>{formatTime}</Text>
-          </BlurView>
+          <View style={styles.timeContainer}>
+            <MaterialCommunityIcons name="clock" size={16} color="#FFFFFF" />
+            <Text style={styles.timeText}>{formattedTime}</Text>
+          </View>
         </View>
 
-        {/* Main Welcome Section */}
+        {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <View style={styles.textSection}>
             <View style={styles.greetingContainer}>
-              <MaterialCommunityIcons name="hand-wave" size={20} color="#F9B233" />
-              <Text style={styles.greetingText}>{greeting()}</Text>
+              <MaterialCommunityIcons name="weather-sunny" size={20} color="#F9B233" />
+              <Text style={styles.greetingText}>{greeting}</Text>
             </View>
-            
-            <Text style={styles.nameText} numberOfLines={1}>
-              {user?.name || 'User'}
-            </Text>
-            
+            <Text style={styles.nameText}>{user?.name || 'User'}</Text>
             <View style={styles.positionContainer}>
-              <MaterialCommunityIcons name="briefcase-outline" size={16} color="#B8E6FF" />
-              <Text style={styles.positionText} numberOfLines={1}>
-                {user?.position || 'Position'}
-              </Text>
+              <MaterialCommunityIcons name="briefcase" size={16} color="#F9B233" />
+              <Text style={styles.positionText}>{user?.position || 'Employee'}</Text>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.avatarContainer} activeOpacity={0.8}>
+          {/* Avatar */}
+          <View style={styles.avatarContainer}>
             <LinearGradient
               colors={['#F9B233', '#FFD700']}
               style={styles.avatarGradient}
             >
               <Image
-                source={{ 
-                  uri: user?.photoURL || 'https://www.looper.com/img/gallery/how-to-start-watching-one-piece/intro-1669408304.jpg'
+                source={{
+                  uri: user?.profileImage?.original || user?.profileImage?.medium || user?.profileImage?.small || user?.photoURL || undefined
                 }}
                 style={styles.avatar}
-                defaultSource={require('../assets/default_avatar.png')} // Tambahkan default avatar
+                defaultSource={require('../../../assets/default_avatar.png')}
+                onError={(error) => {
+                  console.log('Image load error:', error.nativeEvent.error);
+                  console.log('User profileImage:', user?.profileImage);
+                  console.log('User photoURL:', user?.photoURL);
+                }}
+                onLoad={() => {
+                  console.log('Image loaded successfully');
+                }}
               />
-              <View style={styles.avatarBadge}>
-                <MaterialCommunityIcons name="check" size={12} color="#FFFFFF" />
-              </View>
             </LinearGradient>
-          </TouchableOpacity>
+            <View style={styles.avatarBadge}>
+              <MaterialCommunityIcons name="check" size={12} color="#FFFFFF" />
+            </View>
+          </View>
         </View>
 
-        {/* Status Indicator */}
+        {/* Status Row */}
         <View style={styles.statusRow}>
-          <BlurView intensity={15} tint="light" style={styles.statusIndicator}>
+          <View style={styles.statusIndicator}>
             <View style={styles.statusDot} />
             <Text style={styles.statusText}>Online</Text>
-          </BlurView>
-
+          </View>
           <View style={styles.locationContainer}>
-            <MaterialCommunityIcons name="map-marker-outline" size={14} color="#B8E6FF" />
-            <Text style={styles.locationText}>{user?.location || 'Jakarta, Indonesia'}</Text>
+            <MaterialCommunityIcons name="map-marker" size={14} color="#B8E6FF" />
+            <Text style={styles.locationText}>Jakarta, Indonesia</Text>
           </View>
         </View>
       </View>
 
-      {/* Bottom Wave */}
+      {/* Wave Bottom */}
       <View style={styles.waveContainer}>
         <View style={styles.wave} />
       </View>
@@ -126,7 +111,7 @@ const ProfileHeader: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 50, // Status bar height
+    paddingTop: 50,
     paddingBottom: 30,
     paddingHorizontal: 20,
     position: 'relative',

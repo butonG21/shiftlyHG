@@ -1,149 +1,50 @@
-import React, { useEffect, useState } from 'react';
+// src/components/ui/TodayScheduleCard.tsx
+import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Dimensions } from 'react-native';
-import { getProfile as getUserProfile } from '../services/authService';
-import moment from 'moment';
-import 'moment/locale/id';
-import LottieView from 'lottie-react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native';
+import { useSchedule } from '../../hooks';
+import { classifyShift } from '../../utils/shifts';
+import { formatDate, formatTime } from '../../utils/dateTime';
+import { SHIFT_THEMES, SHIFT_MESSAGES, SHIFT_ICONS } from '../../constants/shifts';
+import { SHIFT_ANIMATIONS } from '../../constants/animations';
+import { COLORS } from '../../constants/colors';
 
 const { width } = Dimensions.get('window');
 
-interface ScheduleItem {
-  date: string;
-  shift: string;
-}
-
-const shiftColors = {
-  pagi: '#D0F0FD',
-  middle: '#FFF3CD',
-  siang: '#F8D7DA',
-  off: '#E2E3E5',
-};
-
-const shiftThemes = {
-  pagi: {
-    primary: '#FF9500',
-    secondary: '#FFB84D',
-    background: '#FFF5E6',
-    text: '#8B4000',
-  },
-  middle: {
-    primary: '#007AFF',
-    secondary: '#4DA6FF',
-    background: '#E6F3FF',
-    text: '#003D80',
-  },
-  siang: {
-    primary: '#FF3B30',
-    secondary: '#FF6B61',
-    background: '#FFE6E6',
-    text: '#800020',
-  },
-  off: {
-    primary: '#8E44AD',
-    secondary: '#A569BD',
-    background: '#F4EDF7',
-    text: '#5B2C87',
-  },
-};
-
-const shiftMessages = {
-  pagi: 'masuk pukul pagi',
-  middle: 'masuk pukul tengah hari',
-  siang: 'masuk pukul siang',
-  off: 'libur atau cuti',
-};
-
-const shiftIcons = {
-  pagi: 'white-balance-sunny' as const,
-  middle: 'weather-cloudy' as const,
-  siang: 'weather-sunset-down' as const,
-  off: 'coffee' as const,
-};
-
-const classifyShift = (shiftRaw: string): keyof typeof shiftColors => {
-  if (!shiftRaw) return 'off';
-  const normalized = shiftRaw.toLowerCase();
-  if (normalized === 'off' || normalized === 'ct') return 'off';
-
-  const hourMatch = normalized.match(/^(\d{1,2})(?::\d{2})?$/);
-  if (hourMatch) {
-    const hour = parseInt(hourMatch[1], 10);
-    if (hour >= 7 && hour <= 9) return 'pagi';
-    if (hour >= 10 && hour <= 11) return 'middle';
-    if (hour >= 12 && hour <= 13) return 'siang';
-  }
-  return 'off';
-};
-
-const shiftAnimations = {
-  pagi: require('../assets/animations/pagi.json'),
-  middle: require('../assets/animations/siang-midle.json'),
-  siang: require('../assets/animations/pagi2.json'),
-  off: require('../assets/animations/off3.json'),
-};
-
-const TodayScheduleCard = () => {
-  const [scheduleToday, setScheduleToday] = useState<ScheduleItem | null>(null);
-  const [scheduleTomorrow, setScheduleTomorrow] = useState<ScheduleItem | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadSchedule = async () => {
-      try {
-        const user = await getUserProfile();
-        const today = moment().format('YYYY-MM-DD');
-        const tomorrow = moment().add(1, 'day').format('YYYY-MM-DD');
-
-        const todaySchedule = user.schedule.find((item: ScheduleItem) => item.date === today);
-        const tomorrowSchedule = user.schedule.find((item: ScheduleItem) => item.date === tomorrow);
-
-        setScheduleToday(todaySchedule || { date: today, shift: 'off' });
-        setScheduleTomorrow(tomorrowSchedule || { date: tomorrow, shift: 'off' });
-      } catch (err) {
-        console.error('Gagal mengambil jadwal:', err);
-        const today = moment().format('YYYY-MM-DD');
-        const tomorrow = moment().add(1, 'day').format('YYYY-MM-DD');
-        setScheduleToday({ date: today, shift: 'off' });
-        setScheduleTomorrow({ date: tomorrow, shift: 'off' });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    moment.locale('id');
-    loadSchedule();
-  }, []);
+const TodayScheduleCard: React.FC = () => {
+  const { todaySchedule, tomorrowSchedule, loading, error } = useSchedule();
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <View style={styles.loadingCard}>
-          <ActivityIndicator size="large" color="#F9B233" />
+          <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Memuat jadwal...</Text>
         </View>
       </View>
     );
   }
 
-  const rawShift = scheduleToday?.shift || 'off';
-  const shiftCategory = classifyShift(rawShift);
-  const animationSource = shiftAnimations[shiftCategory];
-  const theme = shiftThemes[shiftCategory];
-  const shiftIcon = shiftIcons[shiftCategory];
+  if (error) {
+    return (
+      <View style={styles.loadingContainer}>
+        <View style={styles.loadingCard}>
+          <MaterialCommunityIcons name="alert-circle" size={48} color={COLORS.status.error} />
+          <Text style={styles.loadingText}>Gagal memuat jadwal</Text>
+        </View>
+      </View>
+    );
+  }
 
-  const messageToday =
-    shiftCategory === 'off'
-      ? 'Hari ini kamu libur atau cuti ✨'
-      : `Kamu masuk pukul ${rawShift}`;
-
-  const shiftBesok = scheduleTomorrow?.shift || 'off';
-  const labelBesok =
-    shiftBesok.toLowerCase() === 'off' || shiftBesok.toLowerCase() === 'ct'
-      ? 'Libur atau cuti'
-      : `pukul ${shiftBesok}`;
-
-  const hariBesok = moment(scheduleTomorrow?.date).format('dddd');
+  const todayShift = todaySchedule?.shift || 'off';
+  const tomorrowShift = tomorrowSchedule?.shift || 'off';
+  
+  const shiftCategory = classifyShift(todayShift);
+  const theme = SHIFT_THEMES[shiftCategory];
+  const shiftMessage = SHIFT_MESSAGES[shiftCategory];
+  const shiftIcon = SHIFT_ICONS[shiftCategory];
+  const animationSource = SHIFT_ANIMATIONS[shiftCategory];
 
   const cardStyle = [
     styles.cardWrapper,
@@ -157,10 +58,10 @@ const TodayScheduleCard = () => {
         <View style={styles.headerContent}>
           <View style={styles.dateContainer}>
             <MaterialCommunityIcons name="calendar" size={20} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.currentDate}>{moment().format('dddd, DD MMM')}</Text>
+            <Text style={styles.currentDate}>{formatDate()}</Text>
           </View>
           <View style={styles.timeContainer}>
-            <Text style={styles.currentTime}>{moment().format('HH:mm')}</Text>
+            <Text style={styles.currentTime}>{formatTime()}</Text>
           </View>
         </View>
       </View>
@@ -169,11 +70,15 @@ const TodayScheduleCard = () => {
       <View style={styles.animationWrapper}>
         <View style={styles.animationContainer}>
           <LottieView
+            key={`${shiftCategory}-${Date.now()}`}
             source={animationSource}
             autoPlay
             loop={true}
             resizeMode="contain"
             style={styles.animation}
+            onAnimationFinish={() => {
+              console.log('Animation finished for:', shiftCategory);
+            }}
           />
         </View>
         
@@ -198,36 +103,42 @@ const TodayScheduleCard = () => {
             <MaterialCommunityIcons name="clock" size={20} color="#FFFFFF" />
             <Text style={styles.sectionTitle}>Jadwal Hari Ini</Text>
           </View>
-          
-          <Text style={styles.mainMessage}>{messageToday}</Text>
-          
-          {shiftCategory !== 'off' && (
-            <View style={[styles.shiftDetail, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Text style={styles.shiftCategory}>{shiftMessages[shiftCategory]}</Text>
-            </View>
-          )}
+          <Text style={styles.mainMessage}>
+            {shiftCategory === 'off' 
+              ? `Hari ini Anda ${shiftMessage}` 
+              : `Hari ini Anda ${shiftMessage} (${todayShift})`
+            }
+          </Text>
+          <View style={[styles.shiftDetail, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+            <Text style={styles.shiftCategory}>{shiftCategory}</Text>
+          </View>
         </View>
 
         {/* Elegant Divider */}
         <View style={styles.elegantDivider}>
           <View style={styles.dividerLine} />
-          <MaterialCommunityIcons name="circle" size={8} color="rgba(255,255,255,0.7)" />
+          <MaterialCommunityIcons name="chevron-down" size={20} color="rgba(255,255,255,0.5)" />
           <View style={styles.dividerLine} />
         </View>
 
         {/* Tomorrow's Schedule */}
         <View style={styles.tomorrowSection}>
           <View style={styles.tomorrowHeader}>
-            <MaterialCommunityIcons name="arrow-right" size={18} color="#FFDC73" />
-            <Text style={styles.tomorrowLabel}>Besok • {hariBesok}</Text>
+            <MaterialCommunityIcons name="calendar-plus" size={18} color="#FFDC73" />
+            <Text style={styles.tomorrowLabel}>Besok</Text>
           </View>
-          <Text style={styles.tomorrowSchedule}>{labelBesok}</Text>
+          <Text style={styles.tomorrowSchedule}>
+            {tomorrowSchedule 
+              ? `Jadwal: ${tomorrowShift === 'off' ? 'Libur' : tomorrowShift}`
+              : 'Belum ada jadwal'
+            }
+          </Text>
         </View>
-      </View>
 
-      {/* Decorative Corner Elements */}
-      <View style={[styles.cornerDecoration, styles.topLeftCorner, { backgroundColor: theme.secondary }]} />
-      <View style={[styles.cornerDecoration, styles.bottomRightCorner, { backgroundColor: theme.secondary }]} />
+        {/* Corner Decorations */}
+        <View style={[styles.cornerDecoration, styles.topLeftCorner, { backgroundColor: '#FFFFFF' }]} />
+        <View style={[styles.cornerDecoration, styles.bottomRightCorner, { backgroundColor: '#FFFFFF' }]} />
+      </View>
     </View>
   );
 };
