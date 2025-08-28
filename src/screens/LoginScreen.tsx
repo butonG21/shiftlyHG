@@ -23,6 +23,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useAuth } from '../contexts/AuthContext';
+import { COLORS } from '../constants/colors';
+import { TYPOGRAPHY } from '../constants/typography';
+import { SPACING, BORDER_RADIUS } from '../constants/spacing';
 
 const { width, height } = Dimensions.get('window');
 
@@ -64,7 +67,7 @@ const LoginScreen: React.FC = () => {
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
-      setError('Username dan password harus diisi');
+      setError('Username and password are required');
       return;
     }
 
@@ -74,7 +77,7 @@ const LoginScreen: React.FC = () => {
     try {
       await login(username.trim(), password);
     } catch (err: any) {
-      setError(err.message || 'Login gagal. Silakan coba lagi.');
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -96,7 +99,7 @@ const LoginScreen: React.FC = () => {
       
       {/* Background Gradient */}
       <LinearGradient
-        colors={['#1a1a2e', '#16213e', '#0f3460']}
+        colors={[COLORS.primary, COLORS.primaryDark]}
         style={StyleSheet.absoluteFillObject}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -138,7 +141,7 @@ const LoginScreen: React.FC = () => {
                 ]}
               >
                 <LinearGradient
-                  colors={['#F9B233', '#FFD700']}
+                  colors={[COLORS.secondary, COLORS.secondaryDark]}
                   style={styles.logoGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
@@ -153,18 +156,18 @@ const LoginScreen: React.FC = () => {
               
               <Text style={styles.appName}>Shiftly</Text>
               <Text style={styles.appTagline}>
-                Kelola jadwal kerja dengan mudah dan efisien
+                Smart Shift Management{"\n"}for Modern Workforce
               </Text>
             </View>
 
             {/* Login Card */}
-            <BlurView intensity={20} tint="dark" style={styles.loginCard}>
+            <BlurView intensity={20} tint="light" style={styles.loginCard}>
               <View style={styles.cardContent}>
                 {/* Card Header */}
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitle}>Selamat Datang</Text>
+                  <Text style={styles.cardTitle}>Welcome Back</Text>
                   <Text style={styles.cardSubtitle}>
-                    Masuk ke akun Anda untuk melanjutkan
+                    Sign in to your account to continue
                   </Text>
                 </View>
 
@@ -180,14 +183,14 @@ const LoginScreen: React.FC = () => {
                       <MaterialCommunityIcons 
                         name="account" 
                         size={20} 
-                        color={focusedField === 'username' ? '#F9B233' : '#666'}
+                        color={focusedField === 'username' ? COLORS.secondary : COLORS.text.secondary}
                         style={styles.inputIcon}
                       />
                       <TextInput
                         style={styles.textInput}
                         value={username}
                         onChangeText={setUsername}
-                        placeholder="Masukkan username Anda"
+                        placeholder="Enter your username"
                         placeholderTextColor="#999"
                         autoCapitalize="none"
                         autoCorrect={false}
@@ -216,14 +219,14 @@ const LoginScreen: React.FC = () => {
                       <MaterialCommunityIcons 
                         name="lock" 
                         size={20} 
-                        color={focusedField === 'password' ? '#F9B233' : '#666'}
+                        color={focusedField === 'password' ? COLORS.secondary : COLORS.text.secondary}
                         style={styles.inputIcon}
                       />
                       <TextInput
                         style={styles.textInput}
                         value={password}
                         onChangeText={setPassword}
-                        placeholder="Masukkan password Anda"
+                        placeholder="Enter your password"
                         placeholderTextColor="#999"
                         secureTextEntry={!showPassword}
                         onFocus={() => handleInputFocus('password')}
@@ -245,7 +248,7 @@ const LoginScreen: React.FC = () => {
                         <MaterialCommunityIcons 
                           name={showPassword ? 'eye-off' : 'eye'} 
                           size={20} 
-                          color={focusedField === 'password' ? '#F9B233' : '#666'}
+                          color={focusedField === 'password' ? COLORS.secondary : COLORS.text.secondary}
                         />
                       </TouchableOpacity>
                     </View>
@@ -274,7 +277,7 @@ const LoginScreen: React.FC = () => {
                     activeOpacity={0.8}
                   >
                     <LinearGradient
-                      colors={isFormValid && !loading ? ['#F9B233', '#FFD700'] : ['#999', '#777']}
+                      colors={isFormValid && !loading ? [COLORS.secondary, COLORS.secondaryDark] : [COLORS.text.light, COLORS.background.secondary]}
                       style={styles.loginButtonGradient}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
@@ -287,11 +290,11 @@ const LoginScreen: React.FC = () => {
                             color="#FFFFFF"
                             style={styles.loadingIcon}
                           />
-                          <Text style={styles.loginButtonText}>Masuk...</Text>
+                          <Text style={styles.loginButtonText}>Signing in...</Text>
                         </View>
                       ) : (
                         <View style={styles.buttonContent}>
-                          <Text style={styles.loginButtonText}>Masuk</Text>
+                          <Text style={styles.loginButtonText}>Sign In</Text>
                           <MaterialCommunityIcons 
                             name="arrow-right" 
                             size={20} 
@@ -307,7 +310,7 @@ const LoginScreen: React.FC = () => {
                 <View style={styles.additionalOptions}>
                   <TouchableOpacity style={styles.forgotPassword}>
                     <Text style={styles.forgotPasswordText}>
-                      Lupa password?
+                      Forgot password?
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -317,10 +320,10 @@ const LoginScreen: React.FC = () => {
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                © 2024 Shiftly. Semua hak dilindungi.
+                © 2024 Shiftly Team. All rights reserved.
               </Text>
               <View style={styles.versionContainer}>
-                <Text style={styles.versionText}>v1.0.0</Text>
+                <Text style={styles.versionText}>v2.1.0</Text>
               </View>
             </View>
           </Animated.View>
@@ -353,35 +356,36 @@ const styles = StyleSheet.create({
   },
   patternCircle: {
     position: 'absolute',
-    borderRadius: 100,
-    backgroundColor: 'rgba(249, 178, 51, 0.1)',
+    borderRadius: 200,
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
   },
   circle1: {
-    width: 200,
-    height: 200,
-    top: -100,
-    right: -50,
+    width: 300,
+    height: 300,
+    top: -150,
+    right: -100,
+    backgroundColor: 'rgba(99, 102, 241, 0.06)',
   },
   circle2: {
-    width: 150,
-    height: 150,
-    bottom: -75,
-    left: -75,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    width: 200,
+    height: 200,
+    bottom: -100,
+    left: -100,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
   },
   circle3: {
-    width: 100,
-    height: 100,
-    top: '30%',
-    left: -20,
-    backgroundColor: 'rgba(249, 178, 51, 0.08)',
+    width: 150,
+    height: 150,
+    top: '25%',
+    left: -50,
+    backgroundColor: 'rgba(139, 92, 246, 0.05)',
   },
   circle4: {
-    width: 80,
-    height: 80,
-    bottom: '30%',
-    right: -10,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    width: 120,
+    height: 120,
+    bottom: '25%',
+    right: -30,
+    backgroundColor: 'rgba(99, 102, 241, 0.04)',
   },
   keyboardContainer: {
     flex: 1,
@@ -397,141 +401,162 @@ const styles = StyleSheet.create({
   },
   logoSection: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: SPACING['2xl'],
   },
   logoContainer: {
-    marginBottom: 20,
+    marginBottom: SPACING.xl,
   },
   logoGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#F9B233',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowColor: COLORS.secondary,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 15,
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   appName: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 8,
-    letterSpacing: 1,
+    fontSize: TYPOGRAPHY.fontSize['4xl'],
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.text.white,
+    marginBottom: SPACING.xs,
+    letterSpacing: 3,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   appTagline: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: TYPOGRAPHY.fontSize.base,
+     fontWeight: TYPOGRAPHY.fontWeight.normal,
+    color: COLORS.text.secondary,
     textAlign: 'center',
-    fontWeight: '500',
+    lineHeight: 24,
   },
   loginCard: {
     width: '100%',
-    borderRadius: 24,
+    borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: COLORS.glass.border,
+    backgroundColor: COLORS.glass.background,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 15,
+     shadowOffset: { width: 0, height: 8 },
+     shadowOpacity: 0.15,
+     shadowRadius: 16,
+     elevation: 8,
   },
   cardContent: {
-    padding: 24,
+    padding: SPACING.xl,
   },
   cardHeader: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: SPACING.lg,
   },
   cardTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 8,
+    fontSize: TYPOGRAPHY.fontSize['2xl'],
+     fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.xs,
     textAlign: 'center',
   },
   cardSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: TYPOGRAPHY.fontSize.sm,
+     fontWeight: TYPOGRAPHY.fontWeight.medium,
+    color: COLORS.text.secondary,
     textAlign: 'center',
     lineHeight: 20,
   },
   formContainer: {
-    gap: 20,
+    gap: SPACING.lg,
   },
   inputContainer: {
-    gap: 8,
+    gap: SPACING.xs,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginLeft: 4,
+    fontSize: TYPOGRAPHY.fontSize.sm,
+     fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    color: COLORS.text.primary,
+    marginLeft: SPACING.xs,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
+    backgroundColor: COLORS.glass.background,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
     borderWidth: 2,
     borderColor: 'transparent',
+    shadowColor: '#000',
+     shadowOffset: { width: 0, height: 2 },
+     shadowOpacity: 0.1,
+     shadowRadius: 4,
+     elevation: 2,
   },
   inputWrapperFocused: {
-    borderColor: '#F9B233',
-    backgroundColor: '#FFFFFF',
+    borderColor: COLORS.secondary,
+    backgroundColor: COLORS.background.card,
+    shadowColor: '#000',
+     shadowOffset: { width: 0, height: 4 },
+     shadowOpacity: 0.15,
+     shadowRadius: 8,
+     elevation: 4,
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: SPACING.sm,
   },
   textInput: {
     flex: 1,
-    fontSize: 16,
-    color: '#333',
+    fontSize: TYPOGRAPHY.fontSize.base,
+     fontWeight: TYPOGRAPHY.fontWeight.normal,
+    color: COLORS.text.primary,
     backgroundColor: 'transparent',
-    paddingVertical: 12,
-    fontWeight: '500',
+    paddingVertical: SPACING.sm,
   },
   eyeIcon: {
-    padding: 4,
+    padding: SPACING.xs,
   },
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 82, 82, 0.1)',
-    padding: 12,
-    borderRadius: 12,
+    backgroundColor: COLORS.status.error,
+    padding: SPACING.sm,
+    borderRadius: BORDER_RADIUS.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255, 82, 82, 0.3)',
+    borderColor: COLORS.status.error,
   },
   errorText: {
-    color: '#FF5252',
-    fontSize: 14,
-    marginLeft: 8,
+    color: COLORS.text.white,
+    fontSize: TYPOGRAPHY.fontSize.sm,
+     fontWeight: TYPOGRAPHY.fontWeight.medium,
+    marginLeft: SPACING.xs,
     flex: 1,
-    fontWeight: '500',
   },
   loginButton: {
-    borderRadius: 16,
+    borderRadius: BORDER_RADIUS.md,
     overflow: 'hidden',
-    shadowColor: '#F9B233',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-    marginTop: 8,
+    shadowColor: '#000',
+     shadowOffset: { width: 0, height: 4 },
+     shadowOpacity: 0.2,
+     shadowRadius: 8,
+     elevation: 6,
+    marginTop: SPACING.xs,
   },
   loginButtonDisabled: {
-    shadowOpacity: 0.1,
-    elevation: 2,
+    shadowColor: '#000',
+     shadowOffset: { width: 0, height: 2 },
+     shadowOpacity: 0.1,
+     shadowRadius: 4,
+     elevation: 2,
   },
   loginButtonGradient: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -540,7 +565,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingIcon: {
-    marginRight: 8,
+    marginRight: SPACING.xs,
   },
   buttonContent: {
     flexDirection: 'row',
@@ -548,43 +573,46 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loginButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-    marginRight: 8,
+    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.text.white,
+    marginRight: SPACING.xs,
   },
   additionalOptions: {
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: SPACING.md,
   },
   forgotPassword: {
-    paddingVertical: 8,
+    paddingVertical: SPACING.xs,
   },
   forgotPasswordText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: TYPOGRAPHY.fontWeight.normal,
+    color: COLORS.text.secondary,
   },
   footer: {
     alignItems: 'center',
-    marginTop: 40,
-    gap: 12,
+    marginTop: SPACING['2xl'],
+    gap: SPACING.sm,
   },
   footerText: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 14,
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: TYPOGRAPHY.fontWeight.normal,
+    color: COLORS.text.light,
     textAlign: 'center',
   },
   versionContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    backgroundColor: COLORS.glass.background,
+    borderRadius: BORDER_RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.glass.border,
   },
   versionText: {
-    color: 'rgba(255, 255, 255, 0.5)',
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    fontWeight: TYPOGRAPHY.fontWeight.normal,
+    color: COLORS.text.light,
   },
 });
 

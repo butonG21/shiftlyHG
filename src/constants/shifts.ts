@@ -8,28 +8,28 @@ export const SHIFT_COLORS = {
 
 export const SHIFT_THEMES = {
   pagi: {
-    primary: '#FF9500',
-    secondary: '#FFB84D',
-    background: '#FFF5E6',
-    text: '#8B4000',
+    primary: '#6366f1',
+    secondary: '#8b5cf6',
+    background: '#f0f0ff',
+    text: '#312e81',
   },
   middle: {
-    primary: '#007AFF',
-    secondary: '#4DA6FF',
-    background: '#E6F3FF',
-    text: '#003D80',
+    primary: '#4f46e5',
+    secondary: '#7c3aed',
+    background: '#ede9fe',
+    text: '#4c1d95',
   },
   siang: {
-    primary: '#FF3B30',
-    secondary: '#FF6B61',
-    background: '#FFE6E6',
-    text: '#800020',
+    primary: '#8b5cf6',
+    secondary: '#a855f7',
+    background: '#f3e8ff',
+    text: '#581c87',
   },
   off: {
-    primary: '#8E44AD',
-    secondary: '#A569BD',
-    background: '#F4EDF7',
-    text: '#5B2C87',
+    primary: '#6b7280',
+    secondary: '#9ca3af',
+    background: '#f9fafb',
+    text: '#374151',
   },
 } as const;
 

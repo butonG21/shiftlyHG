@@ -50,12 +50,12 @@ const ProfileHeader: React.FC = () => {
         <View style={styles.welcomeSection}>
           <View style={styles.textSection}>
             <View style={styles.greetingContainer}>
-              <MaterialCommunityIcons name="weather-sunny" size={20} color="#F9B233" />
+              <MaterialCommunityIcons name="weather-sunny" size={20} color="#a855f7" />
               <Text style={styles.greetingText}>{greeting}</Text>
             </View>
             <Text style={styles.nameText}>{user?.name || 'User'}</Text>
             <View style={styles.positionContainer}>
-              <MaterialCommunityIcons name="briefcase" size={16} color="#F9B233" />
+              <MaterialCommunityIcons name="briefcase" size={16} color="#a855f7" />
               <Text style={styles.positionText}>{user?.position || 'Employee'}</Text>
             </View>
           </View>
@@ -63,7 +63,7 @@ const ProfileHeader: React.FC = () => {
           {/* Avatar */}
           <View style={styles.avatarContainer}>
             <LinearGradient
-              colors={['#F9B233', '#FFD700']}
+              colors={['#8b5cf6', '#a855f7']}
               style={styles.avatarGradient}
             >
               <Image
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   patternCircle: {
     position: 'absolute',
     borderRadius: 100,
-    backgroundColor: 'rgba(249, 178, 51, 0.08)',
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
   },
   circle1: {
     width: 120,
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     height: 60,
     top: '50%',
     right: '30%',
-    backgroundColor: 'rgba(249, 178, 51, 0.12)',
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
   },
   header: {
     zIndex: 10,
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   },
   positionText: {
     fontSize: 14,
-    color: '#F9B233',
+    color: '#a855f7',
     marginLeft: 6,
     fontWeight: '600',
     textTransform: 'capitalize',
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 36,
     padding: 3,
-    shadowColor: '#F9B233',
+    shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
