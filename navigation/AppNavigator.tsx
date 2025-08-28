@@ -41,109 +41,160 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Enhanced Loading Screen Component
+// Modern Splash Screen Component with Purple-Blue Gradient
 const LoadingScreen: React.FC = () => {
   const rotation = useSharedValue(0);
-  const scale = useSharedValue(1);
+  const scale = useSharedValue(0.8);
+  const scale2 = useSharedValue(1);
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(50);
+  const dotsOpacity = useSharedValue(0.3);
 
   React.useEffect(() => {
+    // Logo rotation animation (slower and smoother)
     rotation.value = withRepeat(
-      withTiming(360, { duration: 2000 }),
+      withTiming(360, { duration: 4000 }),
       -1,
       false
     );
     
+    // Logo scale pulse animation (primary)
     scale.value = withRepeat(
-      withTiming(1.1, { duration: 1000 }),
+      withTiming(1.4, { duration: 2000 }),
       -1,
       true
     );
+
+    // Secondary pulse animation
+    scale2.value = withRepeat(
+      withTiming(1.2, { duration: 1800 }),
+      -1,
+      true
+    );
+
+    // Dots animation
+    dotsOpacity.value = withRepeat(
+      withTiming(1, { duration: 800 }),
+      -1,
+      true
+    );
+
+    // Entrance animations
+    opacity.value = withTiming(1, { duration: 800 });
+    translateY.value = withTiming(0, { duration: 800 });
   }, []);
 
-  const animatedStyle = useAnimatedStyle(() => {
+  const logoAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
         { rotate: `${rotation.value}deg` },
-        { scale: scale.value },
       ],
     };
   });
 
   const pulseStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
+    const pulseOpacity = interpolate(
       scale.value,
-      [1, 1.1],
-      [0.3, 0.1]
+      [0.8, 1.4],
+      [0.8, 0.2]
     );
     
     return {
-      opacity,
-      transform: [{ scale: scale.value * 3 }],
+      opacity: pulseOpacity,
+      transform: [{ scale: scale.value }],
+    };
+  });
+
+  const pulseStyle2 = useAnimatedStyle(() => {
+    const pulseOpacity = interpolate(
+      scale2.value,
+      [1, 1.2],
+      [0.6, 0.1]
+    );
+    
+    return {
+      opacity: pulseOpacity,
+      transform: [{ scale: scale2.value }],
+    };
+  });
+
+  const contentAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: opacity.value,
+      transform: [{ translateY: translateY.value }],
+    };
+  });
+
+  const dotsAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: dotsOpacity.value,
+      transform: [{ scale: dotsOpacity.value }],
     };
   });
 
   return (
     <>
-      <StatusBar barStyle="light-content" backgroundColor="#00425A" />
+      <StatusBar barStyle="light-content" backgroundColor="#667eea" translucent />
       <LinearGradient
-        colors={['#00425A', '#005C7A', '#007B9A']}
+        colors={['#667eea', '#764ba2', '#1e3c72']}
         style={styles.loadingContainer}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
-        {/* Background Pattern */}
+        {/* Modern Background Pattern */}
         <View style={styles.loadingPattern}>
           <View style={[styles.patternCircle, styles.circle1]} />
           <View style={[styles.patternCircle, styles.circle2]} />
           <View style={[styles.patternCircle, styles.circle3]} />
+          <View style={[styles.patternCircle, styles.circle4]} />
         </View>
 
         {/* Main Loading Content */}
-        <View style={styles.loadingContent}>
+        <Animated.View style={[styles.loadingContent, contentAnimatedStyle]}>
           {/* Animated Logo Container */}
           <View style={styles.logoContainer}>
-            {/* Pulse Background */}
+            {/* Multiple Pulse Backgrounds */}
+            <Animated.View style={[styles.pulseBackground2, pulseStyle2]} />
             <Animated.View style={[styles.pulseBackground, pulseStyle]} />
             
-            {/* Main Logo */}
-            <Animated.View style={[styles.animatedLogo, animatedStyle]}>
+            {/* Main Logo with Glass Effect */}
+            <Animated.View style={[styles.animatedLogo, logoAnimatedStyle]}>
               <LinearGradient
-                colors={['#F9B233', '#FFD700', '#FFA500']}
+                colors={['#6366f1', '#8b5cf6', '#a855f7']}
                 style={styles.logoGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
               >
                 <MaterialCommunityIcons 
                   name="calendar-clock" 
-                  size={48} 
+                  size={50} 
                   color="#FFFFFF" 
                 />
               </LinearGradient>
             </Animated.View>
           </View>
 
-          {/* App Name and Loading Text */}
+          {/* App Name and Tagline */}
           <View style={styles.textContainer}>
             <Text style={styles.appName}>Shiftly</Text>
-            <Text style={styles.loadingSubtitle}>Memuat aplikasi...</Text>
+            <Text style={styles.appTagline}>Smart Shift Management{"\n"}for Modern Workforce</Text>
             
-            {/* Loading Indicator */}
+            {/* Modern Loading Indicator */}
             <View style={styles.loadingIndicatorContainer}>
-              <ActivityIndicator 
-                size="small" 
-                color="#F9B233" 
-                style={styles.loadingIndicator}
-              />
-              <View style={styles.loadingDots}>
-                <View style={[styles.dot, styles.dot1]} />
-                <View style={[styles.dot, styles.dot2]} />
-                <View style={[styles.dot, styles.dot3]} />
-              </View>
+              <Animated.View style={[styles.loadingDots, dotsAnimatedStyle]}>
+                <Animated.View style={[styles.modernDot, styles.dot1]} />
+                <Animated.View style={[styles.modernDot, styles.dot2]} />
+                <Animated.View style={[styles.modernDot, styles.dot3]} />
+              </Animated.View>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
-        {/* Version Info */}
-        <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Version 1.0.0</Text>
-          <Text style={styles.companyText}>PT. Company Name</Text>
-        </View>
+        {/* Version Info with Glass Effect */}
+        <Animated.View style={[styles.versionContainer, contentAnimatedStyle]}>
+          <Text style={styles.versionText}>Version 2.1.0</Text>
+          <Text style={styles.companyText}>© 2024 Shiftly Team</Text>
+        </Animated.View>
       </LinearGradient>
     </>
   );
@@ -293,28 +344,36 @@ const styles = StyleSheet.create({
   },
   patternCircle: {
     position: 'absolute',
-    borderRadius: 100,
-    backgroundColor: 'rgba(249, 178, 51, 0.1)',
+    borderRadius: 200,
+    backgroundColor: 'rgba(99, 102, 241, 0.08)',
   },
   circle1: {
-    width: 200,
-    height: 200,
-    top: -100,
-    right: -100,
+    width: 300,
+    height: 300,
+    top: -150,
+    right: -150,
+    backgroundColor: 'rgba(139, 92, 246, 0.06)',
   },
   circle2: {
-    width: 150,
-    height: 150,
-    bottom: -75,
-    left: -75,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    width: 200,
+    height: 200,
+    bottom: -100,
+    left: -100,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
   },
   circle3: {
+    width: 150,
+    height: 150,
+    top: '20%',
+    right: '15%',
+    backgroundColor: 'rgba(99, 102, 241, 0.05)',
+  },
+  circle4: {
     width: 100,
     height: 100,
-    top: '30%',
-    right: '20%',
-    backgroundColor: 'rgba(249, 178, 51, 0.08)',
+    bottom: '30%',
+    left: '10%',
+    backgroundColor: 'rgba(139, 92, 246, 0.04)',
   },
   loadingContent: {
     alignItems: 'center',
@@ -324,85 +383,106 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 40,
+    marginBottom: 48,
   },
   pulseBackground: {
     position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F9B233',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(99, 102, 241, 0.3)',
   },
-  animatedLogo: {
-    shadowColor: '#F9B233',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  logoGradient: {
+  pulseBackground2: {
+    position: 'absolute',
     width: 80,
     height: 80,
     borderRadius: 40,
+    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+  },
+  animatedLogo: {
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 15,
+  },
+  logoGradient: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   textContainer: {
     alignItems: 'center',
+    paddingHorizontal: 32,
   },
   appName: {
-    fontSize: 36,
+    fontSize: 42,
     fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 12,
-    letterSpacing: 2,
+    marginBottom: 8,
+    letterSpacing: 3,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
-  loadingSubtitle: {
+  appTagline: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.8)',
     fontWeight: '500',
-    marginBottom: 24,
+    marginBottom: 32,
+    textAlign: 'center',
+    lineHeight: 24,
   },
   loadingIndicatorContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-  },
-  loadingIndicator: {
-    marginRight: 12,
   },
   loadingDots: {
     flexDirection: 'row',
-    gap: 4,
+    gap: 8,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#F9B233',
+  modernDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#6366f1',
   },
   dot1: {
     opacity: 1,
+    backgroundColor: '#6366f1',
   },
   dot2: {
     opacity: 0.7,
+    backgroundColor: '#8b5cf6',
   },
   dot3: {
-    opacity: 0.4,
+    opacity: 0.5,
+    backgroundColor: '#a855f7',
   },
   versionContainer: {
     position: 'absolute',
-    bottom: 40,
+    bottom: 50,
     alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   versionText: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.5)',
-    fontWeight: '500',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '600',
   },
   companyText: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.3)',
+    color: 'rgba(255, 255, 255, 0.5)',
     marginTop: 4,
+    textAlign: 'center',
   },
   errorContainer: {
     flex: 1,

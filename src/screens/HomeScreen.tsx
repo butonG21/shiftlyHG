@@ -8,7 +8,9 @@ import {
   StatusBar,
   Animated,
   Dimensions,
-  Platform
+  Platform,
+  Pressable,
+  Image
 } from 'react-native';
 import { 
   Appbar, 
@@ -19,10 +21,13 @@ import {
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { ProfileHeader, TodayScheduleCard } from '../components/ui';
 import { COLORS } from '../constants/colors';
-import { formatTime } from '../utils/dateTime';
+import { TYPOGRAPHY } from '../constants/typography';
+import { SPACING, BORDER_RADIUS } from '../constants/spacing';
+import { formatTime, formatDate } from '../utils/dateTime';
 
 const { width } = Dimensions.get('window');
 
@@ -34,6 +39,225 @@ interface QuickAction {
   onPress: () => void;
 }
 
+// Animated Activity Item Component
+const AnimatedActivityItem: React.FC<{
+  title: string;
+  time: string;
+  icon: string;
+  iconColor: string;
+  delay?: number;
+}> = ({ title, time, icon, iconColor, delay = 0 }) => {
+  const translateX = useRef(new Animated.Value(50)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(translateX, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
+
+  const animatedStyle = {
+    transform: [{ translateX }, { scale: scaleAnim }],
+    opacity,
+  };
+
+  return (
+    <Animated.View style={[styles.activityItem, animatedStyle]}>
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        android_ripple={{ color: 'rgba(0,0,0,0.05)', borderless: false }}
+        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: SPACING.sm }}
+      >
+        <View style={[styles.activityIcon, { backgroundColor: iconColor }]}>
+          <MaterialCommunityIcons 
+            name={icon as any} 
+            size={20} 
+            color={COLORS.text.white}
+          />
+        </View>
+        <View style={styles.activityContent}>
+          <Text style={styles.activityTitle}>{title}</Text>
+          <Text style={styles.activityTime}>{formatDate(time)}</Text>
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+};
+
+// Animated Stat Card Component
+const AnimatedStatCard: React.FC<{
+  title: string;
+  value: string;
+  icon: string;
+  color: string;
+  delay?: number;
+}> = ({ title, value, icon, color, delay = 0 }) => {
+  const translateY = useRef(new Animated.Value(30)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 300,
+      friction: 10,
+    }).start();
+  };
+
+  const animatedStyle = {
+    transform: [{ translateY }, { scale: scaleAnim }],
+    opacity,
+  };
+
+  return (
+    <Animated.View style={[styles.statCard, animatedStyle]}>
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        android_ripple={{ color: 'rgba(0,0,0,0.1)', borderless: false }}
+      >
+        <View style={{ alignItems: 'center' }}>
+          <MaterialCommunityIcons 
+            name={icon as any} 
+            size={28} 
+            color={color} 
+            style={{ marginBottom: SPACING.xs }}
+          />
+          <Text style={styles.statNumber}>{value}</Text>
+          <Text style={styles.statLabel}>{title}</Text>
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+};
+
+// Animated Quick Action Button Component
+const AnimatedQuickActionButton: React.FC<{
+  action: QuickAction;
+  style?: any;
+}> = ({ action, style }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 0.95,
+        useNativeDriver: true,
+        tension: 300,
+        friction: 10,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0.8,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 300,
+        friction: 10,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const animatedStyle = {
+    transform: [{ scale: scaleAnim }],
+    opacity: opacityAnim,
+  };
+
+  return (
+    <Animated.View style={[animatedStyle]}>
+      <Pressable
+        style={[styles.quickActionButton, { backgroundColor: action.color }, style]}
+        onPress={action.onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        android_ripple={{ color: 'rgba(255,255,255,0.3)', borderless: false }}
+      >
+        <View style={styles.quickActionIconContainer}>
+          <MaterialCommunityIcons 
+            name={action.icon as any} 
+            size={28} 
+            color={COLORS.text.white}
+          />
+        </View>
+        <Text style={styles.quickActionText}>{action.title}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+};
+
 const HomeScreen: React.FC = () => {
   const { logout, user, refreshProfile } = useAuth();
   const insets = useSafeAreaInsets();
@@ -41,12 +265,47 @@ const HomeScreen: React.FC = () => {
   const [showLogoutSnackbar, setShowLogoutSnackbar] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
+  const fabScale = useRef(new Animated.Value(0)).current;
+  const fabPulse = useRef(new Animated.Value(1)).current;
+
+  // Initialize FAB animations
+  useEffect(() => {
+    // Animate FAB entrance
+    Animated.sequence([
+      Animated.delay(1000),
+      Animated.spring(fabScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8,
+      }),
+    ]).start();
+
+    // Start FAB pulse animation
+    const startPulse = () => {
+      Animated.sequence([
+        Animated.timing(fabPulse, {
+          toValue: 1.1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fabPulse, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]).start(() => startPulse());
+    };
+
+    const pulseTimeout = setTimeout(startPulse, 2000);
+    return () => clearTimeout(pulseTimeout);
+  }, []);
 
   // Quick actions data
   const quickActions: QuickAction[] = [
     {
       id: 'schedule',
-      title: 'Lihat Jadwal',
+      title: 'View Schedule',
       icon: 'calendar-month',
       color: COLORS.primary,
       onPress: () => {
@@ -55,7 +314,7 @@ const HomeScreen: React.FC = () => {
     },
     {
       id: 'profile',
-      title: 'Edit Profil',
+      title: 'Edit Profile',
       icon: 'account-edit',
       color: COLORS.secondary,
       onPress: () => {
@@ -64,18 +323,18 @@ const HomeScreen: React.FC = () => {
     },
     {
       id: 'stats',
-      title: 'Statistik',
+      title: 'Statistics',
       icon: 'chart-line',
-      color: '#E91E63',
+      color: COLORS.status.info,
       onPress: () => {
         console.log('Navigate to stats');
       },
     },
     {
       id: 'settings',
-      title: 'Pengaturan',
+      title: 'Settings',
       icon: 'cog',
-      color: '#9C27B0',
+      color: COLORS.status.warning,
       onPress: () => {
         console.log('Navigate to settings');
       },
@@ -117,6 +376,14 @@ const HomeScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
       
+      {/* Background Gradient */}
+      <LinearGradient
+        colors={COLORS.gradient.background}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      />
+      
       {/* Animated Header */}
       <Animated.View style={[styles.header, { paddingTop: insets.top }]}>
         <Animated.View style={[styles.headerOverlay, { opacity: headerOpacity }]} />
@@ -157,37 +424,82 @@ const HomeScreen: React.FC = () => {
         )}
         scrollEventThrottle={16}
       >
-        {/* Profile Header */}
-        <View style={{ paddingHorizontal: 16 }}>
-          <ProfileHeader />
+        {/* Welcome Section */}
+        <View style={styles.welcomeSection}>
+          <View style={styles.welcomeContent}>
+            <View>
+              <Text style={styles.welcomeText}>Selamat Pagi,</Text>
+              <Text style={styles.nameText}>{user?.name || 'User'}</Text>
+              <View style={styles.userRole}>
+                <Text style={styles.roleText}>{user?.position}</Text>
+              </View>
+            </View>
+            <View style={styles.avatarImage}>
+      {user?.photoURL ? (
+        <Image
+          source={{ uri: user.photoURL }} // use user image if available
+          style={styles.avatar}
+        />
+      ) : (
+        <MaterialCommunityIcons
+          name="account"
+          size={40}
+          color={COLORS.text.white}
+        />
+      )}
+    </View>
+          </View>
         </View>
 
-        {/* Today's Schedule Card */}
-        <View style={{ paddingHorizontal: 16 }}>
-          <TodayScheduleCard />
+        {/* Shift Cards */}
+        <View style={styles.shiftCardsContainer}>
+          {/* Today's Shift Card */}
+          <LinearGradient
+            colors={COLORS.gradient.primary}
+            style={styles.shiftCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            <View style={styles.shiftCardHeader}>
+              <View style={styles.shiftCardTime}>
+                <MaterialCommunityIcons name="clock-outline" size={16} color={COLORS.text.white} />
+                <Text style={styles.shiftTimeText}>01:21</Text>
+              </View>
+              <Text style={styles.shiftDateText}>Kamis, 28 Apr</Text>
+            </View>
+            <Text style={styles.shiftTitle}>ANGGI FIRMANSYAH</Text>
+            <View style={styles.shiftCardFooter}>
+              <Text style={styles.shiftStatus}>Online</Text>
+            </View>
+          </LinearGradient>
+
+          {/* Tomorrow's Shift Card */}
+          <View style={styles.shiftCard}>
+            <View style={styles.shiftCardHeader}>
+              <View style={styles.shiftCardTime}>
+                <MaterialCommunityIcons name="clock-outline" size={16} color={COLORS.text.white} />
+                <Text style={styles.shiftTimeText}>01:21</Text>
+              </View>
+              <Text style={styles.shiftDateText}>Kamis, 28 Apr</Text>
+            </View>
+            <Text style={styles.shiftTitle}>JADWAL HARI INI</Text>
+            <Text style={styles.shiftDescription}>Hari ini Anda masuk pukul pagi (8)</Text>
+            <View style={styles.shiftCardFooter}>
+              <Text style={styles.shiftStatus}>OK</Text>
+            </View>
+          </View>
         </View>
 
         {/* Quick Actions */}
         <View style={styles.quickActionsContainer}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="lightning-bolt" size={20} color={COLORS.primary} />
-            <Text style={styles.sectionTitle}>Aksi Cepat</Text>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
           </View>
           <View style={styles.quickActionsGrid}>
             {quickActions.map((action) => (
               <View key={action.id} style={styles.quickActionCard}>
-                <TouchableOpacity
-                  style={[styles.quickActionButton, { backgroundColor: action.color }]}
-                  onPress={action.onPress}
-                  activeOpacity={0.8}
-                >
-                  <MaterialCommunityIcons 
-                    name={action.icon as any} 
-                    size={32} 
-                    color="#FFFFFF" 
-                  />
-                  <Text style={styles.quickActionText}>{action.title}</Text>
-                </TouchableOpacity>
+                <AnimatedQuickActionButton action={action} />
               </View>
             ))}
           </View>
@@ -197,24 +509,32 @@ const HomeScreen: React.FC = () => {
         <View style={styles.statsContainer}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="chart-box" size={20} color={COLORS.primary} />
-            <Text style={styles.sectionTitle}>Statistik Bulan Ini</Text>
+            <Text style={styles.sectionTitle}>This Month's Statistics</Text>
           </View>
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="calendar-check" size={24} color={COLORS.primary} />
-              <Text style={styles.statNumber}>{user?.schedule?.length || 0}</Text>
-              <Text style={styles.statLabel}>Hari Kerja</Text>
-            </View>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="clock-outline" size={24} color={COLORS.secondary} />
-              <Text style={styles.statNumber}>8</Text>
-              <Text style={styles.statLabel}>Jam/Hari</Text>
-            </View>
-            <View style={styles.statCard}>
-              <MaterialCommunityIcons name="trophy" size={24} color="#F9B233" />
-              <Text style={styles.statNumber}>95%</Text>
-              <Text style={styles.statLabel}>Kehadiran</Text>
-            </View>
+            <AnimatedStatCard
+              title="Work Days"
+              value={String(user?.schedule?.length || 0)}
+              icon="calendar-check"
+              color={COLORS.primary}
+              delay={0}
+            />
+            
+            <AnimatedStatCard
+              title="Hours/Day"
+              value="8"
+              icon="clock-outline"
+              color={COLORS.secondary}
+              delay={100}
+            />
+            
+            <AnimatedStatCard
+              title="Attendance"
+              value="95%"
+              icon="trophy"
+              color={COLORS.status.warning}
+              delay={200}
+            />
           </View>
         </View>
 
@@ -222,36 +542,32 @@ const HomeScreen: React.FC = () => {
         <View style={styles.activityContainer}>
           <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="history" size={20} color={COLORS.primary} />
-            <Text style={styles.sectionTitle}>Aktivitas Terbaru</Text>
+            <Text style={styles.sectionTitle}>Recent Activity</Text>
           </View>
           <View style={styles.activityList}>
-            <View style={styles.activityItem}>
-              <View style={[styles.activityIcon, { backgroundColor: COLORS.status.success }]}>
-                <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
-              </View>
-              <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>Shift pagi selesai</Text>
-                <Text style={styles.activityTime}>2 jam yang lalu</Text>
-              </View>
-            </View>
-            <View style={styles.activityItem}>
-              <View style={[styles.activityIcon, { backgroundColor: COLORS.status.info }]}>
-                <MaterialCommunityIcons name="update" size={16} color="#FFFFFF" />
-              </View>
-              <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>Profil diperbarui</Text>
-                <Text style={styles.activityTime}>1 hari yang lalu</Text>
-              </View>
-            </View>
-            <View style={styles.activityItem}>
-              <View style={[styles.activityIcon, { backgroundColor: COLORS.status.warning }]}>
-                <MaterialCommunityIcons name="calendar-plus" size={16} color="#FFFFFF" />
-              </View>
-              <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>Jadwal baru ditambahkan</Text>
-                <Text style={styles.activityTime}>3 hari yang lalu</Text>
-              </View>
-            </View>
+            <AnimatedActivityItem
+              title="Morning shift completed"
+              time="2 hours ago"
+              icon="check"
+              iconColor={COLORS.status.success}
+              delay={0}
+            />
+            
+            <AnimatedActivityItem
+              title="Profile updated"
+              time="1 day ago"
+              icon="update"
+              iconColor={COLORS.status.info}
+              delay={100}
+            />
+            
+            <AnimatedActivityItem
+              title="New schedule added"
+              time="3 days ago"
+              icon="calendar-plus"
+              iconColor={COLORS.status.warning}
+              delay={200}
+            />
           </View>
         </View>
 
@@ -260,12 +576,27 @@ const HomeScreen: React.FC = () => {
 
       {/* Floating Action Button */}
       <Portal>
-        <FAB
-          style={[styles.fab, { bottom: insets.bottom + 16 }]}
-          icon="plus"
-          onPress={() => setFabOpen(!fabOpen)}
-          color="#FFFFFF"
-        />
+        <Animated.View
+          style={{
+            transform: [{ scale: fabScale }, { scale: fabPulse }],
+          }}
+        >
+          <View style={[styles.fabContainer, { bottom: insets.bottom + 16 }]}>
+            <LinearGradient
+              colors={COLORS.gradient.primary}
+              style={styles.fab}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <TouchableOpacity 
+                style={styles.fabButton}
+                onPress={() => setFabOpen(!fabOpen)}
+              >
+                <MaterialCommunityIcons name="plus" size={24} color={COLORS.text.white} />
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+        </Animated.View>
       </Portal>
 
       {/* Logout Snackbar */}
@@ -275,7 +606,7 @@ const HomeScreen: React.FC = () => {
         duration={3000}
         style={styles.snackbar}
       >
-        <Text style={styles.snackbarText}>Berhasil logout</Text>
+        <Text style={styles.snackbarText}>Successfully logged out</Text>
       </Snackbar>
     </View>
   );
@@ -284,7 +615,7 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background.primary,
   },
   header: {
     position: 'absolute',
@@ -308,17 +639,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.md,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginLeft: 12,
+    fontSize: TYPOGRAPHY.fontSize.xl,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    color: COLORS.text.white,
+    marginLeft: SPACING.sm,
   },
   headerRight: {
     flexDirection: 'row',
@@ -330,33 +661,131 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingBottom: 100, // Space for FAB
   },
+  welcomeSection: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
+  },
+  welcomeContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  welcomeText: {
+    fontSize: TYPOGRAPHY.fontSize.base,
+    color: COLORS.text.secondary,
+    marginBottom: SPACING.xs,
+  },
+  nameText: {
+    fontSize: TYPOGRAPHY.fontSize.xl,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.text.white,
+    marginBottom: SPACING.sm,
+  },
+  userRole: {
+    backgroundColor: COLORS.secondary,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs / 2,
+    borderRadius: BORDER_RADIUS.sm,
+    alignSelf: 'flex-start',
+  },
+  roleText: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.text.white,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+  },
+  avatarImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: COLORS.text.white,
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 30,
+  },
+  shiftCardsContainer: {
+    paddingHorizontal: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  shiftCard: {
+    backgroundColor: COLORS.secondary,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  shiftCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  shiftCardTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  shiftTimeText: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.text.white,
+    marginLeft: SPACING.xs,
+  },
+  shiftDateText: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.text.white,
+  },
+  shiftTitle: {
+    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.text.white,
+    marginBottom: SPACING.sm,
+  },
+  shiftDescription: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.text.white,
+    opacity: 0.8,
+    marginBottom: SPACING.md,
+  },
+  shiftCardFooter: {
+    marginTop: SPACING.sm,
+  },
+  shiftStatus: {
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.text.white,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+  },
   quickActionsContainer: {
-    marginTop: 24,
-    paddingHorizontal: 16,
+    marginTop: SPACING.xl,
+    paddingHorizontal: SPACING.md,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: SPACING.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: TYPOGRAPHY.fontSize.xl,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
     color: COLORS.primary,
-    marginLeft: 8,
+    marginLeft: SPACING.xs,
   },
   quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: SPACING.sm,
   },
   quickActionCard: {
-    width: (width - 44) / 2, // 2 columns with margins
+    width: (width - (SPACING.md * 2) - SPACING.sm) / 2, // 2 columns with margins
   },
   quickActionButton: {
-    padding: 20,
-    borderRadius: 16,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -366,99 +795,151 @@ const styles = StyleSheet.create({
     elevation: 4,
     minHeight: 100,
   },
+  quickActionIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
+  },
   quickActionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginTop: 8,
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
+    color: COLORS.text.white,
+    marginTop: SPACING.xs,
     textAlign: 'center',
   },
   statsContainer: {
-    marginTop: 32,
-    paddingHorizontal: 16,
+    marginTop: SPACING['2xl'],
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.background.card,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: SPACING.sm,
   },
   statCard: {
     flex: 1,
-    backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 16,
+    backgroundColor: COLORS.background.surface,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E9ECEF',
+    borderColor: COLORS.background.card,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   statNumber: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: TYPOGRAPHY.fontSize['2xl'],
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.primary,
-    marginTop: 8,
+    marginTop: SPACING.xs,
   },
   statLabel: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    fontWeight: TYPOGRAPHY.fontWeight.normal,
     color: COLORS.text.secondary,
-    marginTop: 4,
+    marginTop: SPACING.xs / 2,
     textAlign: 'center',
   },
   activityContainer: {
-    marginTop: 32,
-    paddingHorizontal: 16,
+    marginTop: SPACING['2xl'],
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.background.card,
+    borderRadius: BORDER_RADIUS.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   activityList: {
-    gap: 12,
+    gap: SPACING.sm,
   },
   activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: COLORS.background.surface,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.sm,
     borderWidth: 1,
-    borderColor: '#E9ECEF',
+    borderColor: COLORS.background.card,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   activityIcon: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: BORDER_RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: SPACING.sm,
   },
   activityContent: {
     flex: 1,
   },
   activityTitle: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
     color: COLORS.text.primary,
-    marginBottom: 2,
+    marginBottom: SPACING.xs / 2,
   },
   activityTime: {
-    fontSize: 12,
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    fontWeight: TYPOGRAPHY.fontWeight.normal,
     color: COLORS.text.secondary,
   },
   bottomSpacing: {
-    height: 32,
+    height: SPACING['2xl'],
+  },
+  fabContainer: {
+    position: 'absolute',
+    right: SPACING.lg,
+    bottom: SPACING.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fab: {
-    backgroundColor: '#F9B233',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  fabButton: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   snackbar: {
     backgroundColor: COLORS.status.success,
     marginBottom: Platform.OS === 'ios' ? 90 : 60,
   },
   snackbarText: {
-    color: '#FFFFFF',
-    fontWeight: '500',
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
+    color: COLORS.text.white,
   },
 });
 

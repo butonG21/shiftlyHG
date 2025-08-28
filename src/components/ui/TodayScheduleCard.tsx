@@ -83,7 +83,7 @@ const TodayScheduleCard: React.FC = () => {
         </View>
         
         {/* Status Badge */}
-        <View style={[styles.statusBadge, { backgroundColor: 'rgba(255,255,255,0.9)' }]}>
+        <View style={[styles.statusBadge, { backgroundColor: 'rgba(255,255,255,0.95)' }]}>
           <MaterialCommunityIcons 
             name={shiftIcon as any} 
             size={16} 
@@ -124,7 +124,7 @@ const TodayScheduleCard: React.FC = () => {
         {/* Tomorrow's Schedule */}
         <View style={styles.tomorrowSection}>
           <View style={styles.tomorrowHeader}>
-            <MaterialCommunityIcons name="calendar-plus" size={18} color="#FFDC73" />
+            <MaterialCommunityIcons name="calendar-plus" size={18} color="#a855f7" />
             <Text style={styles.tomorrowLabel}>Besok</Text>
           </View>
           <Text style={styles.tomorrowSchedule}>
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   tomorrowLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFDC73',
+    color: '#a855f7',
     marginLeft: 8,
     textTransform: 'capitalize',
   },
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   loadingCard: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#f8fafc',
     padding: 40,
     borderRadius: 24,
     alignItems: 'center',
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     fontWeight: '500',
-    color: '#00425A',
+    color: '#475569',
   },
 });
 
