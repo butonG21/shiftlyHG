@@ -34,9 +34,9 @@ export const SHIFT_THEMES = {
 } as const;
 
 export const SHIFT_MESSAGES = {
-  pagi: 'masuk pukul pagi',
-  middle: 'masuk pukul tengah hari',
-  siang: 'masuk pukul siang',
+  pagi: 'masuk pukul',
+  middle: 'masuk pukul',
+  siang: 'masuk pukul',
   off: 'libur atau cuti',
 } as const;
 

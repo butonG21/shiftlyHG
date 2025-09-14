@@ -50,12 +50,12 @@ const ProfileHeader: React.FC = () => {
         <View style={styles.welcomeSection}>
           <View style={styles.textSection}>
             <View style={styles.greetingContainer}>
-              <MaterialCommunityIcons name="weather-sunny" size={20} color={COLORS.text.accent} />
+              <MaterialCommunityIcons name="weather-sunny" size={20} color={COLORS.text.warning} />
               <Text style={styles.greetingText}>{greeting}</Text>
             </View>
             <Text style={styles.nameText}>{user?.name || 'User'}</Text>
             <View style={styles.positionContainer}>
-              <MaterialCommunityIcons name="briefcase" size={16} color={COLORS.text.accent} />
+              <MaterialCommunityIcons name="briefcase" size={16} color={COLORS.text.primary} />
               <Text style={styles.positionText}>{user?.position || 'Employee'}</Text>
             </View>
           </View>
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   },
   positionText: {
     fontSize: 14,
-    color: COLORS.text.accent,
+    color: COLORS.text.white,
     marginLeft: 6,
     fontWeight: '600',
     textTransform: 'capitalize',

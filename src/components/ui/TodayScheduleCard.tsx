@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import { useSchedule } from '../../hooks';
 import { classifyShift } from '../../utils/shifts';
-import { formatDate, formatTime } from '../../utils/dateTime';
+import { formatDate, formatTime, parseAndFormatShift } from '../../utils/dateTime';
 import { SHIFT_THEMES, SHIFT_MESSAGES, SHIFT_ICONS } from '../../constants/shifts';
 import { SHIFT_ANIMATIONS } from '../../constants/animations';
 import { COLORS } from '../../constants/colors';
@@ -117,7 +117,7 @@ const TodayScheduleCard: React.FC = () => {
           <Text style={styles.mainMessage}>
             {shiftCategory === 'off' 
               ? `Hari ini Anda ${shiftMessage}` 
-              : `Hari ini Anda ${shiftMessage} (${todayShift})`
+              : `Hari ini Anda ${shiftMessage} ${parseAndFormatShift(todayShift)}`
             }
           </Text>
           <View style={[styles.shiftDetail, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
@@ -140,7 +140,7 @@ const TodayScheduleCard: React.FC = () => {
           </View>
           <Text style={styles.tomorrowSchedule}>
             {tomorrowSchedule 
-              ? `Jadwal: ${tomorrowShift === 'off' ? 'Libur' : tomorrowShift}`
+              ? `Jadwal: ${parseAndFormatShift(tomorrowShift)}`
               : 'Belum ada jadwal'
             }
           </Text>
