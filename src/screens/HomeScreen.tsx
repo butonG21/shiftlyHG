@@ -325,7 +325,7 @@ const HomeScreen: React.FC = () => {
       id: 'stats',
       title: 'Statistics',
       icon: 'chart-line',
-      color: COLORS.status.info,
+      color: COLORS.status.teal,
       onPress: () => {
         console.log('Navigate to stats');
       },
@@ -424,71 +424,11 @@ const HomeScreen: React.FC = () => {
         )}
         scrollEventThrottle={16}
       >
-        {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
-          <View style={styles.welcomeContent}>
-            <View>
-              <Text style={styles.welcomeText}>Selamat Pagi,</Text>
-              <Text style={styles.nameText}>{user?.name || 'User'}</Text>
-              <View style={styles.userRole}>
-                <Text style={styles.roleText}>{user?.position}</Text>
-              </View>
-            </View>
-            <View style={styles.avatarImage}>
-      {user?.photoURL ? (
-        <Image
-          source={{ uri: user.photoURL }} // use user image if available
-          style={styles.avatar}
-        />
-      ) : (
-        <MaterialCommunityIcons
-          name="account"
-          size={40}
-          color={COLORS.text.white}
-        />
-      )}
-    </View>
-          </View>
-        </View>
+        {/* Profile Header */}
+        <ProfileHeader />
 
-        {/* Shift Cards */}
-        <View style={styles.shiftCardsContainer}>
-          {/* Today's Shift Card */}
-          <LinearGradient
-            colors={COLORS.gradient.primary}
-            style={styles.shiftCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <View style={styles.shiftCardHeader}>
-              <View style={styles.shiftCardTime}>
-                <MaterialCommunityIcons name="clock-outline" size={16} color={COLORS.text.white} />
-                <Text style={styles.shiftTimeText}>01:21</Text>
-              </View>
-              <Text style={styles.shiftDateText}>Kamis, 28 Apr</Text>
-            </View>
-            <Text style={styles.shiftTitle}>ANGGI FIRMANSYAH</Text>
-            <View style={styles.shiftCardFooter}>
-              <Text style={styles.shiftStatus}>Online</Text>
-            </View>
-          </LinearGradient>
-
-          {/* Tomorrow's Shift Card */}
-          <View style={styles.shiftCard}>
-            <View style={styles.shiftCardHeader}>
-              <View style={styles.shiftCardTime}>
-                <MaterialCommunityIcons name="clock-outline" size={16} color={COLORS.text.white} />
-                <Text style={styles.shiftTimeText}>01:21</Text>
-              </View>
-              <Text style={styles.shiftDateText}>Kamis, 28 Apr</Text>
-            </View>
-            <Text style={styles.shiftTitle}>JADWAL HARI INI</Text>
-            <Text style={styles.shiftDescription}>Hari ini Anda masuk pukul pagi (8)</Text>
-            <View style={styles.shiftCardFooter}>
-              <Text style={styles.shiftStatus}>OK</Text>
-            </View>
-          </View>
-        </View>
+        {/* Today Schedule Card */}
+        <TodayScheduleCard />
 
         {/* Quick Actions */}
         <View style={styles.quickActionsContainer}>
@@ -583,16 +523,16 @@ const HomeScreen: React.FC = () => {
         >
           <View style={[styles.fabContainer, { bottom: insets.bottom + 16 }]}>
             <LinearGradient
-              colors={COLORS.gradient.primary}
+              colors={COLORS.gradient.accent}
               style={styles.fab}
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+              end={{ x: 1, y: 1 }}
             >
               <TouchableOpacity 
                 style={styles.fabButton}
                 onPress={() => setFabOpen(!fabOpen)}
               >
-                <MaterialCommunityIcons name="plus" size={24} color={COLORS.text.white} />
+                <MaterialCommunityIcons name="plus" size={28} color={COLORS.text.white} />
               </TouchableOpacity>
             </LinearGradient>
           </View>
@@ -661,104 +601,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingBottom: 100, // Space for FAB
   },
-  welcomeSection: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
-  },
-  welcomeContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  welcomeText: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    color: COLORS.text.secondary,
-    marginBottom: SPACING.xs,
-  },
-  nameText: {
-    fontSize: TYPOGRAPHY.fontSize.xl,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.text.white,
-    marginBottom: SPACING.sm,
-  },
-  userRole: {
-    backgroundColor: COLORS.secondary,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs / 2,
-    borderRadius: BORDER_RADIUS.sm,
-    alignSelf: 'flex-start',
-  },
-  roleText: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: COLORS.text.white,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-  },
-  avatarImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: COLORS.text.white,
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 30,
-  },
-  shiftCardsContainer: {
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.lg,
-  },
-  shiftCard: {
-    backgroundColor: COLORS.secondary,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  shiftCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  shiftCardTime: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  shiftTimeText: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: COLORS.text.white,
-    marginLeft: SPACING.xs,
-  },
-  shiftDateText: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: COLORS.text.white,
-  },
-  shiftTitle: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.text.white,
-    marginBottom: SPACING.sm,
-  },
-  shiftDescription: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: COLORS.text.white,
-    opacity: 0.8,
-    marginBottom: SPACING.md,
-  },
-  shiftCardFooter: {
-    marginTop: SPACING.sm,
-  },
-  shiftStatus: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: COLORS.text.white,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-  },
+
   quickActionsContainer: {
     marginTop: SPACING.xl,
     paddingHorizontal: SPACING.md,

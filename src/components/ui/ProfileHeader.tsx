@@ -20,7 +20,7 @@ const ProfileHeader: React.FC = () => {
 
   return (
     <LinearGradient
-      colors={COLORS.gradient.primary}
+      colors={COLORS.gradient.accent}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -37,11 +37,11 @@ const ProfileHeader: React.FC = () => {
         {/* Date and Time Row */}
         <View style={styles.dateTimeRow}>
           <View style={styles.dateContainer}>
-            <MaterialCommunityIcons name="calendar" size={18} color="#B8E6FF" />
+            <MaterialCommunityIcons name="calendar" size={18} color={COLORS.text.white} />
             <Text style={styles.dateText}>{formattedDate}</Text>
           </View>
           <View style={styles.timeContainer}>
-            <MaterialCommunityIcons name="clock" size={16} color="#FFFFFF" />
+            <MaterialCommunityIcons name="clock" size={16} color={COLORS.text.white} />
             <Text style={styles.timeText}>{formattedTime}</Text>
           </View>
         </View>
@@ -50,12 +50,12 @@ const ProfileHeader: React.FC = () => {
         <View style={styles.welcomeSection}>
           <View style={styles.textSection}>
             <View style={styles.greetingContainer}>
-              <MaterialCommunityIcons name="weather-sunny" size={20} color="#a855f7" />
+              <MaterialCommunityIcons name="weather-sunny" size={20} color={COLORS.text.accent} />
               <Text style={styles.greetingText}>{greeting}</Text>
             </View>
             <Text style={styles.nameText}>{user?.name || 'User'}</Text>
             <View style={styles.positionContainer}>
-              <MaterialCommunityIcons name="briefcase" size={16} color="#a855f7" />
+              <MaterialCommunityIcons name="briefcase" size={16} color={COLORS.text.accent} />
               <Text style={styles.positionText}>{user?.position || 'Employee'}</Text>
             </View>
           </View>
@@ -63,27 +63,29 @@ const ProfileHeader: React.FC = () => {
           {/* Avatar */}
           <View style={styles.avatarContainer}>
             <LinearGradient
-              colors={['#8b5cf6', '#a855f7']}
+              colors={COLORS.gradient.secondary}
               style={styles.avatarGradient}
             >
-              <Image
-                source={{
-                  uri: user?.profileImage?.original || user?.profileImage?.medium || user?.profileImage?.small || user?.photoURL || undefined
-                }}
-                style={styles.avatar}
-                defaultSource={require('../../../assets/default_avatar.png')}
-                onError={(error) => {
-                  console.log('Image load error:', error.nativeEvent.error);
-                  console.log('User profileImage:', user?.profileImage);
-                  console.log('User photoURL:', user?.photoURL);
-                }}
-                onLoad={() => {
-                  console.log('Image loaded successfully');
-                }}
-              />
+              {(user?.profileImage?.original || user?.profileImage?.medium || user?.profileImage?.small || user?.photoURL) ? (
+                <Image
+                  source={{
+                    uri: user?.profileImage?.original || user?.profileImage?.medium || user?.profileImage?.small || user?.photoURL
+                  }}
+                  style={styles.avatar}
+                  defaultSource={require('../../../assets/default_avatar.png')}
+                  onError={(error) => {
+                    console.log('Image load error:', error.nativeEvent.error);
+                  }}
+                />
+              ) : (
+                <Image
+                  source={require('../../../assets/default_avatar.png')}
+                  style={styles.avatar}
+                />
+              )}
             </LinearGradient>
             <View style={styles.avatarBadge}>
-              <MaterialCommunityIcons name="check" size={12} color="#FFFFFF" />
+              <MaterialCommunityIcons name="check" size={12} color={COLORS.text.white} />
             </View>
           </View>
         </View>
@@ -95,7 +97,7 @@ const ProfileHeader: React.FC = () => {
             <Text style={styles.statusText}>Online</Text>
           </View>
           <View style={styles.locationContainer}>
-            <MaterialCommunityIcons name="map-marker" size={14} color="#B8E6FF" />
+            <MaterialCommunityIcons name="map-marker" size={14} color={COLORS.text.white} />
             <Text style={styles.locationText}>Jakarta, Indonesia</Text>
           </View>
         </View>
@@ -127,7 +129,7 @@ const styles = StyleSheet.create({
   patternCircle: {
     position: 'absolute',
     borderRadius: 100,
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   circle1: {
     width: 120,
@@ -147,7 +149,7 @@ const styles = StyleSheet.create({
     height: 60,
     top: '50%',
     right: '30%',
-    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   header: {
     zIndex: 10,
@@ -164,7 +166,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 14,
-    color: '#B8E6FF',
+    color: COLORS.text.white,
     marginLeft: 8,
     fontWeight: '500',
     textTransform: 'capitalize',
@@ -180,7 +182,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     marginLeft: 6,
     fontWeight: '700',
     letterSpacing: 1,
@@ -202,13 +204,13 @@ const styles = StyleSheet.create({
   },
   greetingText: {
     fontSize: 16,
-    color: '#B8E6FF',
+    color: COLORS.text.white,
     marginLeft: 8,
     fontWeight: '500',
   },
   nameText: {
     fontSize: 24,
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     fontWeight: '800',
     marginBottom: 6,
     letterSpacing: 0.5,
@@ -219,7 +221,7 @@ const styles = StyleSheet.create({
   },
   positionText: {
     fontSize: 14,
-    color: '#a855f7',
+    color: COLORS.text.accent,
     marginLeft: 6,
     fontWeight: '600',
     textTransform: 'capitalize',
@@ -232,7 +234,7 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 36,
     padding: 3,
-    shadowColor: '#8b5cf6',
+    shadowColor: COLORS.text.accent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -247,14 +249,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 2,
     right: 2,
-    backgroundColor: '#4CAF50',
+    backgroundColor: COLORS.status.success,
     width: 20,
     height: 20,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: COLORS.text.white,
   },
   statusRow: {
     flexDirection: 'row',
@@ -274,12 +276,12 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#4CAF50',
+    backgroundColor: COLORS.status.success,
     marginRight: 8,
   },
   statusText: {
     fontSize: 12,
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     fontWeight: '600',
   },
   locationContainer: {
@@ -288,7 +290,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 12,
-    color: '#B8E6FF',
+    color: COLORS.text.white,
     marginLeft: 4,
     fontWeight: '500',
   },
@@ -301,7 +303,7 @@ const styles = StyleSheet.create({
   },
   wave: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.background.surface,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
   },

@@ -8,28 +8,28 @@ export const SHIFT_COLORS = {
 
 export const SHIFT_THEMES = {
   pagi: {
-    primary: '#6366f1',
-    secondary: '#8b5cf6',
-    background: '#f0f0ff',
-    text: '#312e81',
+    primary: '#3b82f6',        // Modern blue for morning
+    secondary: '#60a5fa',      // Light blue accent
+    background: '#eff6ff',     // Blue-50 background
+    text: '#1e40af',          // Blue-800 text
   },
   middle: {
-    primary: '#4f46e5',
-    secondary: '#7c3aed',
-    background: '#ede9fe',
-    text: '#4c1d95',
+    primary: '#f59e0b',        // Warm amber for midday
+    secondary: '#fbbf24',      // Light amber accent
+    background: '#fffbeb',     // Amber-50 background
+    text: '#92400e',          // Amber-800 text
   },
   siang: {
-    primary: '#8b5cf6',
-    secondary: '#a855f7',
-    background: '#f3e8ff',
-    text: '#581c87',
+    primary: '#ef4444',        // Vibrant red for afternoon
+    secondary: '#f87171',      // Light red accent
+    background: '#fef2f2',     // Red-50 background
+    text: '#b91c1c',          // Red-700 text
   },
   off: {
-    primary: '#6b7280',
-    secondary: '#9ca3af',
-    background: '#f9fafb',
-    text: '#374151',
+    primary: '#10b981',        // Fresh green for off days
+    secondary: '#34d399',      // Light green accent
+    background: '#ecfdf5',     // Green-50 background
+    text: '#047857',          // Green-700 text
   },
 } as const;
 

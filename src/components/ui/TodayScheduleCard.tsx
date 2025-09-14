@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Dimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import LottieView from 'lottie-react-native';
 import { useSchedule } from '../../hooks';
 import { classifyShift } from '../../utils/shifts';
@@ -48,23 +49,28 @@ const TodayScheduleCard: React.FC = () => {
 
   const cardStyle = [
     styles.cardWrapper,
-    { backgroundColor: theme.background }
+    { backgroundColor: 'transparent' }
   ];
 
   return (
     <View style={cardStyle}>
       {/* Header dengan waktu saat ini */}
-      <View style={[styles.header, { backgroundColor: theme.primary }]}>
+      <LinearGradient
+        colors={COLORS.gradient.accent}
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
         <View style={styles.headerContent}>
           <View style={styles.dateContainer}>
-            <MaterialCommunityIcons name="calendar" size={20} color="rgba(255,255,255,0.9)" />
+            <MaterialCommunityIcons name="calendar" size={20} color={COLORS.text.white} />
             <Text style={styles.currentDate}>{formatDate()}</Text>
           </View>
           <View style={styles.timeContainer}>
             <Text style={styles.currentTime}>{formatTime()}</Text>
           </View>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Animation Container dengan Overlay */}
       <View style={styles.animationWrapper}>
@@ -87,20 +93,25 @@ const TodayScheduleCard: React.FC = () => {
           <MaterialCommunityIcons 
             name={shiftIcon as any} 
             size={16} 
-            color={theme.primary} 
+            color={shiftCategory === 'off' ? COLORS.status.success : COLORS.status.info} 
           />
-          <Text style={[styles.badgeText, { color: theme.primary }]}>
+          <Text style={[styles.badgeText, { color: shiftCategory === 'off' ? COLORS.status.success : COLORS.status.info }]}>
             {shiftCategory === 'off' ? 'LIBUR' : 'KERJA'}
           </Text>
         </View>
       </View>
 
       {/* Main Content */}
-      <View style={[styles.contentContainer, { backgroundColor: theme.primary }]}>
+      <LinearGradient
+          colors={COLORS.gradient.accent}
+          style={styles.contentContainer}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
         {/* Today's Schedule */}
         <View style={styles.todaySection}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="clock" size={20} color="#FFFFFF" />
+            <MaterialCommunityIcons name="clock" size={20} color={COLORS.text.white} />
             <Text style={styles.sectionTitle}>Jadwal Hari Ini</Text>
           </View>
           <Text style={styles.mainMessage}>
@@ -109,7 +120,7 @@ const TodayScheduleCard: React.FC = () => {
               : `Hari ini Anda ${shiftMessage} (${todayShift})`
             }
           </Text>
-          <View style={[styles.shiftDetail, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+          <View style={[styles.shiftDetail, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
             <Text style={styles.shiftCategory}>{shiftCategory}</Text>
           </View>
         </View>
@@ -117,14 +128,14 @@ const TodayScheduleCard: React.FC = () => {
         {/* Elegant Divider */}
         <View style={styles.elegantDivider}>
           <View style={styles.dividerLine} />
-          <MaterialCommunityIcons name="chevron-down" size={20} color="rgba(255,255,255,0.5)" />
+          <MaterialCommunityIcons name="chevron-down" size={20} color={COLORS.text.white} />
           <View style={styles.dividerLine} />
         </View>
 
         {/* Tomorrow's Schedule */}
         <View style={styles.tomorrowSection}>
           <View style={styles.tomorrowHeader}>
-            <MaterialCommunityIcons name="calendar-plus" size={18} color="#a855f7" />
+            <MaterialCommunityIcons name="calendar-plus" size={18} color={COLORS.text.accent} />
             <Text style={styles.tomorrowLabel}>Besok</Text>
           </View>
           <Text style={styles.tomorrowSchedule}>
@@ -136,9 +147,9 @@ const TodayScheduleCard: React.FC = () => {
         </View>
 
         {/* Corner Decorations */}
-        <View style={[styles.cornerDecoration, styles.topLeftCorner, { backgroundColor: '#FFFFFF' }]} />
-        <View style={[styles.cornerDecoration, styles.bottomRightCorner, { backgroundColor: '#FFFFFF' }]} />
-      </View>
+        <View style={[styles.cornerDecoration, styles.topLeftCorner, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]} />
+        <View style={[styles.cornerDecoration, styles.bottomRightCorner, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]} />
+      </LinearGradient>
     </View>
   );
 };
@@ -150,7 +161,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: COLORS.text.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 16,
@@ -175,7 +186,7 @@ const styles = StyleSheet.create({
   currentDate: {
     fontSize: 14,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.9)',
+    color: COLORS.text.white,
     marginLeft: 8,
     textTransform: 'capitalize',
   },
@@ -190,7 +201,7 @@ const styles = StyleSheet.create({
   currentTime: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     letterSpacing: 1,
   },
   animationWrapper: {
@@ -221,7 +232,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    shadowColor: '#000',
+    shadowColor: COLORS.text.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -250,15 +261,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     marginLeft: 8,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   mainMessage: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     lineHeight: 26,
     marginBottom: 8,
   },
@@ -272,7 +282,7 @@ const styles = StyleSheet.create({
   shiftCategory: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: COLORS.text.white,
     textTransform: 'capitalize',
   },
   elegantDivider: {
@@ -302,14 +312,14 @@ const styles = StyleSheet.create({
   tomorrowLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#a855f7',
+    color: COLORS.text.accent,
     marginLeft: 8,
     textTransform: 'capitalize',
   },
   tomorrowSchedule: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: COLORS.text.white,
   },
   cornerDecoration: {
     position: 'absolute',
@@ -333,12 +343,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   loadingCard: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: COLORS.background.primary,
     padding: 40,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: COLORS.text.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -348,7 +358,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     fontWeight: '500',
-    color: '#475569',
+    color: COLORS.text.secondary,
   },
 });
 
