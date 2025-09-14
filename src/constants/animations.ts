@@ -1,8 +1,8 @@
 // Animation constants
 export const SHIFT_ANIMATIONS = {
-  pagi: require('../../assets/animations/pagi.json'),
+  pagi: require('../../assets/animations/pagi2.json'),
   middle: require('../../assets/animations/siang-midle.json'),
-  siang: require('../../assets/animations/pagi2.json'),
+  siang: require('../../assets/animations/siang-midle.json'),
   off: require('../../assets/animations/off.json'),
 } as const;
 

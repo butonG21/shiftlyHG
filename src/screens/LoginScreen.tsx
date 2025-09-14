@@ -320,7 +320,7 @@ const LoginScreen: React.FC = () => {
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                © 2024 Shiftly Team. All rights reserved.
+                © 2025 Shiftly • Crafted with 💜 by AF • Empowering Modern Workplaces
               </Text>
               <View style={styles.versionContainer}>
                 <Text style={styles.versionText}>v2.1.0</Text>
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   appTagline: {
     fontSize: TYPOGRAPHY.fontSize.base,
      fontWeight: TYPOGRAPHY.fontWeight.normal,
-    color: COLORS.text.secondary,
+    color: COLORS.text.white,
     textAlign: 'center',
     lineHeight: 24,
   },

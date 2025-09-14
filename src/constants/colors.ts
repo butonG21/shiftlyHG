@@ -1,64 +1,84 @@
-// Enhanced Modern Color Palette for Shiftly App
-// Based on the redesigned UI with comprehensive color system
-
+// Enhanced Professional Color Palette for Shiftly App
+// Modern, attractive yet professional design with balanced colors
 export const COLORS = {
-  // Primary brand colors - Main gradient theme
-  primary: '#6366f1',           // Indigo-500 - Primary brand color
-  primaryDark: '#4338ca',       // Indigo-600 - Darker variant
-  secondary: '#8b5cf6',         // Violet-500 - Secondary brand color
-  secondaryDark: '#7c3aed',     // Violet-600 - Darker secondary
+  // Primary brand colors - Modern professional theme with more character
+  primary: '#3b82f6',           // Blue-500 - Modern professional blue
+  primaryDark: '#1d4ed8',       // Blue-700 - Deeper blue variant
+  secondary: '#8b5cf6',         // Violet-500 - Attractive secondary purple
+  secondaryDark: '#7c3aed',     // Violet-600 - Deeper secondary
   
-  // Background system - Multi-layer approach
+  // Background system - Modern and inviting
   background: {
-    primary: '#667eea',         // Main background start
-    secondary: '#f97316',       // Orange accent (buttons, highlights)
+    primary: '#f8fafc',         // Slate-50 - Clean light background
+    secondary: '#3b82f6',       // Blue-500 - Vibrant accent
     surface: '#FFFFFF',         // Pure white surfaces
-    card: 'rgba(255, 255, 255, 0.15)', // Glass morphism cards
-    overlay: 'rgba(0, 0, 0, 0.6)',     // Modal overlays
+    card: 'rgba(255, 255, 255, 0.95)', // Clean white cards with transparency
+    overlay: 'rgba(15, 23, 42, 0.7)',  // Professional overlay
+    accent: '#f0f9ff',          // Sky-50 - Light accent background
   },
   
-  // Text hierarchy system
+  // Text hierarchy system - Enhanced readability with character
   text: {
-    primary: '#1f2937',         // Gray-800 - Primary text
-    secondary: '#475569',       // Slate-600 - Secondary text
-    light: '#9ca3af',          // Gray-400 - Light text
+    primary: '#1e293b',         // Slate-800 - Strong primary text
+    secondary: '#475569',       // Slate-600 - Professional secondary text
+    light: '#64748b',          // Slate-500 - Light text
     white: '#FFFFFF',          // Pure white text
-    muted: 'rgba(255, 255, 255, 0.8)', // Muted white text
-    accent: '#8b5cf6',         // Accent text color
+    muted: 'rgba(71, 85, 105, 0.7)', // Muted professional text
+    accent: '#3b82f6',         // Modern blue accent text
+    success: '#059669',        // Emerald-600 - Success text
+    warning: '#d97706',        // Amber-600 - Warning text
   },
   
-  // Status and semantic colors
+  // Status and semantic colors - Modern vibrant tones
   status: {
-    success: '#10b981',        // Emerald-500 - Success states
-    warning: '#f59e0b',        // Amber-500 - Warning states  
-    error: '#ef4444',          // Red-500 - Error states
-    info: '#3b82f6',           // Blue-500 - Info states
+    success: '#10b981',        // Emerald-500 - Vibrant success green
+    warning: '#f59e0b',        // Amber-500 - Bright warning orange
+    error: '#ef4444',          // Red-500 - Clear error red
+    info: '#3b82f6',           // Blue-500 - Modern info blue
+    purple: '#8b5cf6',         // Violet-500 - Attractive purple
+    teal: '#14b8a6',           // Teal-500 - Fresh teal
   },
   
-  // Gradient combinations from the design
+  // Gradient combinations - Modern and attractive
   gradient: {
-    primary: ['#6366f1', '#8b5cf6'],                    // Main brand gradient
-    secondary: ['#8b5cf6', '#a855f7'],                  // Secondary gradient
-    background: ['#667eea', '#764ba2', '#8b5cf6'],      // Main background gradient
-    card: ['rgba(255, 255, 255, 0.15)', 'rgba(255, 255, 255, 0.05)'], // Glass cards
-    accent: ['#f97316', '#fbbf24'],                     // Button gradient
-    purple: ['#a855f7', '#ec4899'],                     // Purple accent
-    blue: ['#3b82f6', '#6366f1'],                       // Blue accent
+    primary: ['#3b82f6', '#1d4ed8'],                    // Modern blue gradient
+    secondary: ['#8b5cf6', '#7c3aed'],                  // Attractive purple gradient
+    background: ['#f8fafc', '#f0f9ff', '#e0f2fe'],     // Sky-tinted background gradient
+    card: ['rgba(255, 255, 255, 0.98)', 'rgba(240, 249, 255, 0.95)'], // Clean card gradient
+    accent: ['#3b82f6', '#8b5cf6'],                     // Blue to purple gradient
+    neutral: ['#f1f5f9', '#e2e8f0'],                   // Neutral gray gradient
+    subtle: ['#f8fafc', '#f0f9ff'],                    // Sky-tinted subtle gradient
+    success: ['#10b981', '#059669'],                   // Success gradient
+    warning: ['#f59e0b', '#d97706'],                   // Warning gradient
+    teal: ['#14b8a6', '#0d9488'],                      // Teal gradient
   },
   
-  // Glass morphism effects
+  // Professional glass morphism effects - More subtle
   glass: {
-    background: 'rgba(255, 255, 255, 0.12)',  // Glass background
-    border: 'rgba(255, 255, 255, 0.2)',       // Glass borders
-    shadow: 'rgba(0, 0, 0, 0.1)',             // Subtle shadows
+    background: 'rgba(248, 250, 252, 0.8)',   // Professional glass background
+    border: 'rgba(148, 163, 184, 0.2)',       // Subtle slate border
+    shadow: 'rgba(15, 23, 42, 0.08)',         // Professional shadow
+  },
+  
+  // Additional professional colors
+  professional: {
+    navy: '#1e293b',           // Slate-800 - Professional navy
+    charcoal: '#334155',       // Slate-700 - Professional charcoal
+    steel: '#475569',          // Slate-600 - Steel blue-gray
+    silver: '#94a3b8',         // Slate-400 - Professional silver
+    pearl: '#f1f5f9',         // Slate-100 - Pearl white
+    frost: '#f8fafc',          // Slate-50 - Frost white
   },
 } as const;
 
-// Opacity values for various use cases
+// Opacity values for professional applications
 export const OPACITY = {
-  disabled: 0.6,        // Disabled state opacity
-  overlay: 0.8,         // Modal overlay opacity
-  subtle: 0.1,          // Subtle background effects
-  medium: 0.3,          // Medium transparency
-  strong: 0.7,          // Strong transparency effects
+  disabled: 0.5,        // Professional disabled state
+  overlay: 0.75,        // Professional modal overlay
+  subtle: 0.05,         // Very subtle background effects
+  medium: 0.2,          // Medium transparency for professional look
+  strong: 0.6,          // Strong transparency effects
+  glass: 0.8,           // Glass effect opacity
 } as const;
+
+// Note: SHADOWS moved to spacing.ts to avoid conflicts
