@@ -22,6 +22,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { ProfileHeader, TodayScheduleCard } from '../components/ui';
 import { COLORS } from '../constants/colors';
@@ -259,7 +260,8 @@ const AnimatedQuickActionButton: React.FC<{
 };
 
 const HomeScreen: React.FC = () => {
-  const { logout, user, refreshProfile } = useAuth();
+  const { user, logout, refreshProfile } = useAuth();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [showLogoutSnackbar, setShowLogoutSnackbar] = useState(false);
@@ -309,7 +311,7 @@ const HomeScreen: React.FC = () => {
       icon: 'calendar-month',
       color: COLORS.primary,
       onPress: () => {
-        console.log('Navigate to schedule');
+        navigation.navigate('Schedule' as never);
       },
     },
     {
