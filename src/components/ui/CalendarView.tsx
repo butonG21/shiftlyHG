@@ -19,8 +19,8 @@ import { SPACING, BORDER_RADIUS } from '../../constants/spacing';
 import { SHIFT_THEMES } from '../../constants/shifts';
 
 const { width } = Dimensions.get('window');
-const CALENDAR_WIDTH = width - (SPACING.md * 2);
-const DAY_SIZE = (CALENDAR_WIDTH - (SPACING.xs * 6)) / 7;
+const CALENDAR_WIDTH = width - (SPACING.md * 3.6);
+const DAY_SIZE = (CALENDAR_WIDTH / 7) - 1;
 
 interface CalendarViewProps {
   scheduleItems: ScheduleItem[];
@@ -50,30 +50,53 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const dayNames = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
   // Generate calendar days
   const calendarDays = useMemo(() => {
     const firstDay = new Date(currentYear, currentMonth - 1, 1);
     const lastDay = new Date(currentYear, currentMonth, 0);
+    
+    // Calculate the start date for calendar grid
+    // firstDay.getDay() returns 0 for Sunday, 1 for Monday, etc.
+    // We want Monday (1) to align with our first column (Sen)
     const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    let dayOfWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    // Convert Sunday (0) to 7 for our Monday-first calendar
+    if (dayOfWeek === 0) dayOfWeek = 7;
+    // Adjust to make Monday the first day (subtract dayOfWeek - 1)
+    // If firstDay is Sunday (0), dayOfWeek becomes 7, so subtract 6 days.
+    // If firstDay is Monday (1), dayOfWeek is 1, so subtract 0 days.
+    startDate.setDate(firstDay.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
 
     const days: CalendarDay[] = [];
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+
+    // Helper function to format date to YYYY-MM-DD (local time)
+    const formatDateToYYYYMMDD = (date: Date) => {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const todayStr = formatDateToYYYYMMDD(today);
 
     // Create schedule map for quick lookup
     const scheduleMap = new Map<string, string>();
     scheduleItems.forEach(item => {
-      scheduleMap.set(item.date, item.shift);
+      // Ensure the date from item is also formatted consistently
+      const itemDate = new Date(item.date);
+      const dateKey = formatDateToYYYYMMDD(itemDate);
+      scheduleMap.set(dateKey, item.shift);
     });
 
+    // Generate 42 days (6 weeks * 7 days) for calendar grid
     for (let i = 0; i < 42; i++) {
       const currentDate = new Date(startDate);
       currentDate.setDate(startDate.getDate() + i);
       
-      const dateStr = currentDate.toISOString().split('T')[0];
+      const dateStr = formatDateToYYYYMMDD(currentDate);
       const isCurrentMonth = currentDate.getMonth() === currentMonth - 1;
       const isToday = dateStr === todayStr;
       const shift = scheduleMap.get(dateStr);
@@ -263,10 +286,11 @@ const styles = StyleSheet.create({
   },
   dayNamesContainer: {
     flexDirection: 'row',
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.md,
+    width: CALENDAR_WIDTH,
   },
   dayNameContainer: {
-    width: DAY_SIZE,
+    width: (CALENDAR_WIDTH / 7) - 1,
     alignItems: 'center',
     paddingVertical: SPACING.xs,
   },
@@ -281,10 +305,11 @@ const styles = StyleSheet.create({
   calendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING.xs,
+    width: CALENDAR_WIDTH,
+    justifyContent: 'flex-start',
   },
   dayContainer: {
-    width: DAY_SIZE,
+    width: (CALENDAR_WIDTH / 7) - 1,
     height: DAY_SIZE,
     alignItems: 'center',
     justifyContent: 'flex-start',
@@ -321,7 +346,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xs / 2,
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.xs,
-    minWidth: DAY_SIZE - SPACING.xs,
+    minWidth: (CALENDAR_WIDTH / 7) - SPACING.xs,
     alignItems: 'center',
   },
   shiftText: {
