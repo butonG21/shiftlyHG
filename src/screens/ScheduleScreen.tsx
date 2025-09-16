@@ -134,7 +134,7 @@ const ScheduleScreen: React.FC = () => {
     
     if (schedule.schedule && schedule.schedule.length > 0) {
       schedule.schedule.forEach(item => {
-        if (item.shift === 'OFF' || item.shift === 'Libur') {
+        if (item.shift === 'OFF' || item.shift === 'Libur' || item.shift === 'CT') {
           offDays++;
         } else {
           workingDays++;
@@ -187,7 +187,7 @@ const ScheduleScreen: React.FC = () => {
                 size={24}
                 color={COLORS.secondary}
               />
-              <Text style={styles.statNumber}>{daysInMonth}</Text>
+              <Text style={styles.statNumber}>{workingDays + offDays}</Text>
               <Text style={styles.statLabel}>Total Hari</Text>
             </View>
           </View>

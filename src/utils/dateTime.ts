@@ -75,10 +75,10 @@ export const formatShiftTime = (hour: number | string): string => {
 export const parseAndFormatShift = (shift: string | number): string => {
   if (!shift) return 'Tidak ada jadwal';
   
-  const shiftStr = shift.toString().toLowerCase();
+  const shiftStr = shift.toString();
   
-  // Handle 'off' or 'ct' cases
-  if (shiftStr === 'off' || shiftStr === 'ct') {
+  // Handle 'OFF' case (case insensitive)
+  if (shiftStr.toLowerCase() === 'off') {
     return 'Libur';
   }
   
@@ -93,6 +93,6 @@ export const parseAndFormatShift = (shift: string | number): string => {
     }
   }
   
-  // If no pattern matches, return as is
+  // Untuk shift khusus seperti 'CT', tampilkan sesuai data API
   return shiftStr;
 };

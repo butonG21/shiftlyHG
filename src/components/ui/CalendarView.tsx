@@ -161,6 +161,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               <View style={[styles.shiftBadge, { backgroundColor: COLORS.status.success }]}>
                 <Text style={styles.shiftText}>Libur</Text>
               </View>
+            ) : shiftCategory === 'special' ? (
+              <LinearGradient
+                colors={[shiftTheme?.primary || COLORS.primary, shiftTheme?.secondary || COLORS.secondary]}
+                style={styles.shiftBadge}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.shiftText}>{day.shift}</Text>
+              </LinearGradient>
             ) : (
               <LinearGradient
                 colors={[shiftTheme?.primary || COLORS.primary, shiftTheme?.secondary || COLORS.secondary]}
@@ -244,6 +253,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               end={{ x: 1, y: 1 }}
             />
             <Text style={styles.legendText}>Kerja</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <LinearGradient
+              colors={[SHIFT_THEMES.special.primary, SHIFT_THEMES.special.secondary]}
+              style={styles.legendColor}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+            <Text style={styles.legendText}>Khusus</Text>
           </View>
         </View>
       </View>
