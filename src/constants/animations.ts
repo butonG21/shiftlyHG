@@ -4,6 +4,7 @@ export const SHIFT_ANIMATIONS = {
   middle: require('../../assets/animations/siang-midle.json'),
   siang: require('../../assets/animations/siang-midle.json'),
   off: require('../../assets/animations/off.json'),
+  special: require('../../assets/animations/off.json'),
 } as const;
 
 export const ANIMATION_CONFIG = {

@@ -1,4 +1,5 @@
-import { ShiftType, SHIFT_COLORS } from '../constants/shifts';
+import { SHIFT_COLORS } from '../constants/shifts';
+import { ShiftType } from '../types/schedule';
 
 /**
  * Classify shift based on raw shift string
@@ -6,7 +7,13 @@ import { ShiftType, SHIFT_COLORS } from '../constants/shifts';
 export const classifyShift = (shiftRaw: string): ShiftType => {
   if (!shiftRaw) return 'off';
   const normalized = shiftRaw.toLowerCase();
-  if (normalized === 'off' || normalized === 'ct') return 'off';
+  
+  // Khusus untuk shift 'CT' dan shift khusus lainnya yang bukan jam
+  if (normalized === 'ct' || !normalized.match(/^(\d{1,2})(?::\d{2})?$|^off$/i)) {
+    return 'special';
+  }
+  
+  if (normalized === 'off') return 'off';
 
   const hourMatch = normalized.match(/^(\d{1,2})(?::\d{2})?$/);
   if (hourMatch) {
@@ -29,7 +36,7 @@ export const getShiftColor = (shiftType: ShiftType): string => {
  * Check if shift is work day
  */
 export const isWorkDay = (shiftType: ShiftType): boolean => {
-  return shiftType !== 'off';
+  return shiftType !== 'off' && shiftType !== 'special';
 };
 
 /**
@@ -41,6 +48,7 @@ export const getShiftDisplayName = (shiftType: ShiftType): string => {
     middle: 'Tengah Hari',
     siang: 'Siang',
     off: 'Libur',
+    special: 'Special'
   };
   return displayNames[shiftType];
 };
