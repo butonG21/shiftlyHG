@@ -4,6 +4,7 @@ export const SHIFT_COLORS = {
   middle: '#FFF3CD',
   siang: '#F8D7DA',
   off: '#E2E3E5',
+  special: '#D1C4E9', // Warna ungu muda untuk shift khusus seperti CT
 } as const;
 
 export const SHIFT_THEMES = {
@@ -31,6 +32,12 @@ export const SHIFT_THEMES = {
     background: '#ecfdf5',     // Green-50 background
     text: '#047857',          // Green-700 text
   },
+  special: {
+    primary: '#9575cd',        // Ungu untuk shift khusus
+    secondary: '#b39ddb',      // Ungu muda accent
+    background: '#f3e5f5',     // Purple-50 background
+    text: '#6d28d9',          // Purple-700 text
+  },
 } as const;
 
 export const SHIFT_MESSAGES = {
@@ -38,6 +45,7 @@ export const SHIFT_MESSAGES = {
   middle: 'masuk pukul',
   siang: 'masuk pukul',
   off: 'libur atau cuti',
+  special: 'shift khusus',
 } as const;
 
 export const SHIFT_ICONS = {
@@ -45,6 +53,7 @@ export const SHIFT_ICONS = {
   middle: 'weather-cloudy' as const,
   siang: 'weather-sunset-down' as const,
   off: 'coffee' as const,
+  special: 'star-circle' as const,
 } as const;
 
 export type ShiftType = keyof typeof SHIFT_COLORS;

@@ -49,7 +49,7 @@ export const uploadExcelSchedule = async (file: any): Promise<UploadResponse> =>
     formData.append('file', file);
     
     const response = await apiClient.post<ApiResponse<UploadResponse>>(
-      '/schedules/upload',
+      '/schedule/upload',
       formData,
       {
         headers: {
@@ -75,7 +75,7 @@ export const getAllSchedules = async (): Promise<EmployeeSchedule[]> => {
   try {
     console.log('Fetching all schedules...');
     
-    const response = await apiClient.get<ApiResponse<EmployeeSchedule[]>>('/schedules');
+    const response = await apiClient.get<ApiResponse<EmployeeSchedule[]>>('/schedule');
     const schedules = extractApiData(response);
     
     console.log('All schedules fetched successfully');
@@ -94,7 +94,7 @@ export const searchSchedulesByName = async (name: string): Promise<EmployeeSched
   try {
     console.log('Searching schedules by name:', name);
     
-    const response = await apiClient.get<ApiResponse<EmployeeSchedule[]>>(`/schedules/search?name=${encodeURIComponent(name)}`);
+    const response = await apiClient.get<ApiResponse<EmployeeSchedule[]>>(`/schedule/search?name=${encodeURIComponent(name)}`);
     const schedules = extractApiData(response);
     
     console.log('Schedules search completed');
@@ -113,7 +113,7 @@ export const getEmployeeSchedule = async (employeeId: string): Promise<EmployeeS
   try {
     console.log('Fetching employee schedule for:', employeeId);
     
-    const response = await apiClient.get<ApiResponse<EmployeeSchedule>>(`/schedules/employee/${employeeId}`);
+    const response = await apiClient.get<ApiResponse<EmployeeSchedule>>(`/schedule/${employeeId}`);
     const schedule = extractApiData(response);
     
     console.log('Employee schedule fetched successfully');
@@ -132,7 +132,7 @@ export const filterScheduleByMonth = async (employeeId: string, month: number, y
   try {
     console.log('Filtering schedule by month:', { employeeId, month, year });
     
-    const response = await apiClient.get<ApiResponse<EmployeeSchedule>>(`/schedules/employee/${employeeId}/filter?month=${month}&year=${year}`);
+    const response = await apiClient.get<ApiResponse<EmployeeSchedule>>(`/schedule/${employeeId}/filter?month=${month}&year=${year}`);
     const schedule = extractApiData(response);
     
     console.log('Schedule filtered successfully');
@@ -151,7 +151,7 @@ export const getCurrentMonthSchedule = async (employeeId: string): Promise<Emplo
   try {
     console.log('Fetching current month schedule for:', employeeId);
     
-    const response = await apiClient.get<ApiResponse<EmployeeSchedule>>(`/schedules/employee/${employeeId}/current-month`);
+    const response = await apiClient.get<ApiResponse<EmployeeSchedule>>(`/schedule/${employeeId}/current-month`);
     const schedule = extractApiData(response);
     
     console.log('Current month schedule fetched successfully');
@@ -170,7 +170,7 @@ export const getAvailableMonths = async (employeeId: string): Promise<{ month: n
   try {
     console.log('Fetching available months for:', employeeId);
     
-    const response = await apiClient.get<ApiResponse<{ month: number; year: number; month_name: string }[]>>(`/schedules/employee/${employeeId}/available-months`);
+    const response = await apiClient.get<ApiResponse<{ month: number; year: number; month_name: string }[]>>(`/schedule/${employeeId}/available-months`);
     const months = extractApiData(response);
     
     console.log('Available months fetched successfully');
@@ -189,7 +189,7 @@ export const getScheduleByDateRange = async (employeeId: string, startDate: stri
   try {
     console.log('Fetching schedule by date range:', { employeeId, startDate, endDate });
     
-    const response = await apiClient.get<ApiResponse<EmployeeSchedule>>(`/schedules/employee/${employeeId}/date-range?start=${startDate}&end=${endDate}`);
+    const response = await apiClient.get<ApiResponse<EmployeeSchedule>>(`/schedule/${employeeId}/date-range?start=${startDate}&end=${endDate}`);
     const schedule = extractApiData(response);
     
     console.log('Schedule by date range fetched successfully');

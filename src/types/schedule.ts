@@ -39,7 +39,7 @@ export interface UploadResponse {
   message: string;
 }
 
-export type ShiftType = 'morning' | 'afternoon' | 'night' | 'off';
+export type ShiftType = 'pagi' | 'middle' | 'siang' | 'off' | 'special';
 
 export interface ShiftTheme {
   primary: string;

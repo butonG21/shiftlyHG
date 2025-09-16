@@ -23,6 +23,7 @@ import Animated, {
 
 import LoginScreen from '../src/screens/LoginScreen';
 import HomeScreen from '../src/screens/HomeScreen';
+import ScheduleScreen from '../src/screens/ScheduleScreen';
 import { useAuth } from '../src/contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
@@ -278,23 +279,15 @@ const AppNavigator: React.FC = () => {
               }}
             />
             {/* Add other authenticated screens here */}
-            {/*
             <Stack.Screen
               name="Schedule"
               component={ScheduleScreen}
               options={{
-                title: 'Jadwal',
-                headerShown: true,
-                headerStyle: {
-                  backgroundColor: '#00425A',
-                },
-                headerTitleStyle: {
-                  color: '#FFFFFF',
-                  fontWeight: '700',
-                },
-                headerTintColor: '#FFFFFF',
+                headerShown: false,
+                animation: 'slide_from_right',
               }}
             />
+            {/*
             <Stack.Screen
               name="Profile"
               component={ProfileScreen}
