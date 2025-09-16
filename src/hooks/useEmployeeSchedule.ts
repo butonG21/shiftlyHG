@@ -72,7 +72,28 @@ const useEmployeeSchedule = (): UseEmployeeScheduleReturn => {
       setCurrentFilter({ month, year });
     } catch (err) {
       console.error('Error filtering schedule by month:', err);
-      setError(err instanceof Error ? err.message : 'Failed to filter schedule');
+      
+      // Handle 404 error (no schedule data found) gracefully
+      if (err instanceof Error && (err.message.includes('404') || err.message.includes('not found'))) {
+        // Set empty schedule data but don't show error to user
+        setSchedule({
+          employee_id: user.uid,
+          name: '',
+          position: '',
+          department: '',
+          schedule: [],
+          statistics: {
+            total_scheduled_days: 0,
+            shift_distribution: {},
+            working_days_in_month: 0
+          }
+        });
+        setScheduleItems([]);
+        setCurrentFilter({ month, year });
+        setError(null); // Don't show error for missing data
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to filter schedule');
+      }
     } finally {
       setLoading(false);
     }

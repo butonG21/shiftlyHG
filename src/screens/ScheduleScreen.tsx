@@ -123,44 +123,75 @@ const ScheduleScreen: React.FC = () => {
     if (!schedule?.statistics) return null;
 
     const { statistics } = schedule;
-    const totalDays = statistics.total_scheduled_days || 0;
-    const workingDays = statistics.working_days_in_month || 0;
-    const offDays = totalDays - workingDays;
+    
+    // Calculate days in current month
+    const currentDate = new Date(currentFilter?.year || new Date().getFullYear(), currentFilter?.month || new Date().getMonth(), 1);
+    const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+    
+    // Count actual working days from schedule items
+    let workingDays = 0;
+    let offDays = 0;
+    
+    if (schedule.schedule && schedule.schedule.length > 0) {
+      schedule.schedule.forEach(item => {
+        if (item.shift === 'OFF' || item.shift === 'Libur') {
+          offDays++;
+        } else {
+          workingDays++;
+        }
+      });
+    } else {
+      // Fallback to API statistics if no items
+      workingDays = statistics.working_days_in_month || 0;
+      // Use working days calculation if off_days_in_month doesn't exist
+      offDays = daysInMonth - workingDays;
+    }
 
     return (
       <View style={styles.statsContainer}>
         <Text style={styles.statsTitle}>Statistik Bulan Ini</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
+        {(workingDays + offDays) === 0 ? (
+          <View style={styles.noDataContainer}>
             <MaterialCommunityIcons
-              name="calendar-check"
-              size={24}
-              color={COLORS.primary}
+              name="calendar-blank"
+              size={48}
+              color={COLORS.text.secondary}
             />
-            <Text style={styles.statNumber}>{workingDays}</Text>
-            <Text style={styles.statLabel}>Hari Kerja</Text>
+            <Text style={styles.noDataText}>Belum ada data jadwal untuk bulan ini</Text>
           </View>
-          
-          <View style={styles.statCard}>
-            <MaterialCommunityIcons
-              name="calendar-remove"
-              size={24}
-              color={COLORS.status.success}
-            />
-            <Text style={styles.statNumber}>{offDays}</Text>
-            <Text style={styles.statLabel}>Hari Libur</Text>
+        ) : (
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <MaterialCommunityIcons
+                name="calendar-check"
+                size={24}
+                color={COLORS.primary}
+              />
+              <Text style={styles.statNumber}>{workingDays}</Text>
+              <Text style={styles.statLabel}>Hari Kerja</Text>
+            </View>
+            
+            <View style={styles.statCard}>
+              <MaterialCommunityIcons
+                name="calendar-remove"
+                size={24}
+                color={COLORS.status.success}
+              />
+              <Text style={styles.statNumber}>{offDays}</Text>
+              <Text style={styles.statLabel}>Hari Libur</Text>
+            </View>
+            
+            <View style={styles.statCard}>
+              <MaterialCommunityIcons
+                name="calendar"
+                size={24}
+                color={COLORS.secondary}
+              />
+              <Text style={styles.statNumber}>{daysInMonth}</Text>
+              <Text style={styles.statLabel}>Total Hari</Text>
+            </View>
           </View>
-          
-          <View style={styles.statCard}>
-            <MaterialCommunityIcons
-              name="calendar"
-              size={24}
-              color={COLORS.secondary}
-            />
-            <Text style={styles.statNumber}>{totalDays}</Text>
-            <Text style={styles.statLabel}>Total Hari</Text>
-          </View>
-        </View>
+        )}
       </View>
     );
   };
@@ -399,6 +430,16 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     marginTop: SPACING.xs / 2,
     textAlign: 'center',
+  },
+  noDataContainer: {
+    alignItems: 'center',
+    padding: SPACING.xl,
+  },
+  noDataText: {
+    fontSize: TYPOGRAPHY.fontSize.base,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    marginTop: SPACING.md,
   },
   distributionContainer: {
     backgroundColor: COLORS.background.card,
