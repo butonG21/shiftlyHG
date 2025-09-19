@@ -2,10 +2,9 @@
 import { User } from './user';
 
 export interface ApiResponse<T = unknown> {
-  success: boolean;
+  status: string;
   message: string;
   data: T;
-  timestamp: string;
 }
 
 export interface ApiError {

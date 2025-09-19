@@ -1,6 +1,5 @@
 // Spacing System - Consistent Design Tokens
 export const SPACING = {
-  // Base spacing units
   xs: 4,   // 4px
   sm: 8,   // 8px
   md: 16,  // 16px
@@ -11,6 +10,12 @@ export const SPACING = {
   '4xl': 56, // 56px
   '5xl': 64, // 64px
   '6xl': 80, // 80px
+  // Add these aliases
+  xsmall: 4,
+  small: 8,
+  medium: 16,
+  large: 24,
+  xlarge: 32,
 } as const;
 
 // Border radius values
@@ -20,7 +25,7 @@ export const BORDER_RADIUS = {
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 20,
+  xl: 24,
   '2xl': 24,
   '3xl': 32,
   full: 9999,

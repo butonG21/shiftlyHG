@@ -6,6 +6,13 @@ export const COLORS = {
   primaryDark: '#1d4ed8',       // Blue-700 - Deeper blue variant
   secondary: '#8b5cf6',         // Violet-500 - Attractive secondary purple
   secondaryDark: '#7c3aed',     // Violet-600 - Deeper secondary
+  accent: {
+    blue: '#60a5fa',
+    purple: '#a78bfa',
+    green: '#4ade80',
+    yellow: '#facc15',
+    red: '#f87171',
+  },
   
   // Background system - Modern and inviting
   background: {
