@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.normal,
-    color: COLORS.text.light,
+    color: COLORS.text.white,
     textAlign: 'center',
   },
   versionContainer: {
