@@ -6,11 +6,16 @@ import {
   RefreshControl,
   StatusBar,
   Image,
+  TouchableOpacity,
+  Dimensions,
 } from 'react-native';
 import {
   Appbar,
   Text,
   ActivityIndicator,
+  Card,
+  Button,
+  IconButton,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +27,8 @@ import { TYPOGRAPHY } from '../constants/typography';
 import { SPACING, BORDER_RADIUS, SHADOWS } from '../constants/spacing';
 import { DatePickerModal } from 'react-native-paper-dates';
 import type { DatePickerModalSingleProps } from 'react-native-paper-dates';
+
+const { width } = Dimensions.get('window');
 
 const AttendanceScreen = () => {
   const navigation = useNavigation();
@@ -55,50 +62,83 @@ const AttendanceScreen = () => {
     setDatePickerVisible(false);
   };
 
-  const getStatusColor = (type: string): string => {
+  const getStatusInfo = (type: string) => {
     switch (type.toLowerCase()) {
       case 'check in':
-        return COLORS.status.success;
+        return {
+          color: COLORS.status.success,
+          icon: 'login',
+          bgColor: '#f0fdf4',
+          borderColor: '#22c55e'
+        };
       case 'break start':
-        return COLORS.status.warning;
+        return {
+          color: COLORS.status.warning,
+          icon: 'coffee',
+          bgColor: '#fffbeb',
+          borderColor: '#f59e0b'
+        };
       case 'break end':
-        return COLORS.status.info;
+        return {
+          color: COLORS.status.info,
+          icon: 'coffee-off',
+          bgColor: '#eff6ff',
+          borderColor: '#3b82f6'
+        };
       case 'check out':
-        return COLORS.status.error;
+        return {
+          color: COLORS.status.error,
+          icon: 'logout',
+          bgColor: '#fef2f2',
+          borderColor: '#ef4444'
+        };
       default:
-        return COLORS.text.secondary;
+        return {
+          color: COLORS.text.secondary,
+          icon: 'clock',
+          bgColor: '#f8fafc',
+          borderColor: '#e2e8f0'
+        };
     }
   };
 
   const renderHeader = () => (
     <LinearGradient
-      colors={COLORS.gradient.primary}
+      colors={['#3b82f6', '#1d4ed8', '#1e40af']}
       style={[styles.header, { paddingTop: insets.top }]}
     >
-      <Appbar.Header style={styles.appbar}>
-        <Appbar.BackAction
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      <View style={styles.headerContent}>
+        <TouchableOpacity 
           onPress={() => navigation.goBack()}
-          iconColor={COLORS.text.white}
-        />
-        <View style={styles.headerContent}>
+          style={styles.backButton}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color="white" />
+        </TouchableOpacity>
+        
+        <View style={styles.headerTextContainer}>
           <Text style={styles.headerTitle}>Attendance Record</Text>
-          {attendance?.data && (
-            <Text style={styles.headerDate}>
-              {new Date(attendance.data.date).toLocaleDateString('en-US', {
+          <Text style={styles.headerSubtitle}>
+            {attendance?.data ? 
+              new Date(attendance.data.date).toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
-              })}
-            </Text>
-          )}
+              }) : 
+              'Select a date'
+            }
+          </Text>
         </View>
-        <Appbar.Action
-          icon="calendar"
-          iconColor={COLORS.text.white}
+
+        <TouchableOpacity 
           onPress={() => setDatePickerVisible(true)}
-        />
-      </Appbar.Header>
+          style={styles.calendarButton}
+        >
+          <MaterialCommunityIcons name="calendar-month" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
       
       <DatePickerModal
         visible={datePickerVisible}
@@ -112,139 +152,210 @@ const AttendanceScreen = () => {
     </LinearGradient>
   );
 
-  const renderDailySummary = () => (
-    <View style={styles.summaryContainer}>
-      <Text style={styles.summaryTitle}>Daily Summary</Text>
-      <View style={styles.summaryGrid}>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryValue}>10h 16m</Text>
-          <Text style={styles.summaryLabel}>TOTAL TIME</Text>
-        </View>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryValue}>57m</Text>
-          <Text style={styles.summaryLabel}>BREAK TIME</Text>
-        </View>
-      </View>
-    </View>
-  );
-
-  const renderStatusBadge = (type: string) => (
-    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(type) }]}>
-      <Text style={styles.statusText}>{type === 'check in' ? 'VERIFIED' : type.toUpperCase()}</Text>
-    </View>
-  );
-
-  const renderTimelineItem = (
+  const renderAttendanceCard = (
     type: string,
     time: string,
     address: string,
-    image: string,
-    isLast: boolean
-  ) => (
-    <View style={styles.timelineItem}>
-      <View style={styles.timelineLeft}>
-        <View 
-          style={[
-            styles.timelineDot,
-            { backgroundColor: getStatusColor(type) }
-          ]}
-        >
-          <MaterialCommunityIcons
-            name={type.toLowerCase().includes('check') ? 'check' : 'coffee'}
-            size={12}
-            color={COLORS.text.white}
-          />
+    image: string | null
+  ) => {
+    const statusInfo = getStatusInfo(type);
+    
+    // Get photo label based on type
+    const getPhotoLabel = (type: string) => {
+      return `${type} Photo`;
+    };
+    
+    return (
+      <View style={styles.attendanceCard} key={type}>
+        <View style={[styles.cardLeft, { borderLeftColor: statusInfo.borderColor }]}>
+          <View style={[styles.iconContainer, { backgroundColor: statusInfo.bgColor }]}>
+            <MaterialCommunityIcons 
+              name={statusInfo.icon as any} 
+              size={20} 
+              color={statusInfo.color} 
+            />
+          </View>
         </View>
-        {!isLast && <View style={styles.timelineLine} />}
-      </View>
-      
-      <View style={styles.timelineContent}>
-        <LinearGradient
-          colors={[COLORS.background.surface, COLORS.glass.background]}
-          style={styles.timelineCard}
-        >
-          <View style={styles.timelineHeader}>
-            <Text style={styles.timelineType}>{type}</Text>
-            <View style={[styles.timeBadge, { backgroundColor: getStatusColor(type) }]}>
-              <Text style={styles.timeText}>{time || '--:--'}</Text>
+        
+        <View style={styles.cardContent}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>{type}</Text>
+            <View style={[styles.timeChip, { backgroundColor: statusInfo.color }]}>
+              <Text style={styles.timeText}>{time || '--:--:--'}</Text>
             </View>
           </View>
           
           {address && (
-            <View style={styles.locationContainer}>
-              <MaterialCommunityIcons
-                name="map-marker"
-                size={16}
-                color={COLORS.text.secondary}
+            <View style={styles.locationRow}>
+              <MaterialCommunityIcons 
+                name="map-marker" 
+                size={16} 
+                color={COLORS.text.secondary} 
               />
-              <Text style={styles.locationText} numberOfLines={2}>{address}</Text>
+              <Text style={styles.locationText} numberOfLines={2}>
+                {address}
+              </Text>
             </View>
           )}
           
           {image && (
-            <View style={styles.imageWrapper}>
-              <Image
-                source={{ uri: image }}
-                style={styles.timelineImage}
-                resizeMode="cover"
-              />
-              {renderStatusBadge(type)}
-            </View>
+            <TouchableOpacity style={styles.photoContainer}>
+              <Image source={{ uri: image }} style={styles.employeePhoto} />
+              <View style={styles.photoOverlay}>
+                <Text style={styles.photoLabel}>{getPhotoLabel(type)}</Text>
+                <MaterialCommunityIcons name="camera" size={16} color="white" />
+              </View>
+            </TouchableOpacity>
           )}
-        </LinearGradient>
-      </View>
-    </View>
-  );
-
-  const renderAttendanceList = () => {
-    if (!attendance?.success || !attendance?.data) {
-      return (
-        <View style={styles.emptyState}>
-          <MaterialCommunityIcons
-            name="calendar-blank"
-            size={64}
-            color={COLORS.text.secondary}
-          />
-          <Text style={styles.emptyStateText}>No attendance record found</Text>
         </View>
-      );
-    }
-
-    const { data } = attendance;
-
-    return (
-      <View style={styles.timelineContainer}>
-        {renderTimelineItem(
-          'Check In',
-          data.start_time,
-          data.start_address,
-          data.start_image,
-          false
-        )}
-        {renderTimelineItem(
-          'Break Start',
-          data.break_out_time,
-          data.break_out_address,
-          data.break_out_image,
-          false
-        )}
-        {renderTimelineItem(
-          'Break End',
-          data.break_in_time,
-          data.break_in_address,
-          data.break_in_image,
-          false
-        )}
-        {renderTimelineItem(
-          'Check Out',
-          data.end_time,
-          data.end_address,
-          data.end_image,
-          true
-        )}
       </View>
     );
   };
+
+  // Calculate dynamic summary data
+  const calculateSummary = () => {
+    if (!attendance?.data) {
+      return {
+        totalTime: '--:--',
+        breakTime: '--:--',
+        workingTime: '--:--'
+      };
+    }
+
+    const { data } = attendance;
+    
+    // Helper function to parse time string (HH:MM:SS or HH:MM)
+    const parseTime = (timeStr: string): Date | null => {
+      if (!timeStr || timeStr === '--:--:--') return null;
+      
+      const today = new Date();
+      const [hours, minutes, seconds = '00'] = timeStr.split(':');
+      
+      if (hours && minutes) {
+        const date = new Date(today);
+        date.setHours(parseInt(hours, 10));
+        date.setMinutes(parseInt(minutes, 10));
+        date.setSeconds(parseInt(seconds, 10));
+        return date;
+      }
+      return null;
+    };
+
+    // Helper function to format duration in hours and minutes
+    const formatDuration = (milliseconds: number): string => {
+      if (milliseconds <= 0) return '--:--';
+      
+      const hours = Math.floor(milliseconds / (1000 * 60 * 60));
+      const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
+      
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+      } else {
+        return `${minutes}m`;
+      }
+    };
+
+    // Parse times
+    const checkIn = parseTime(data.start_time);
+    const breakStart = parseTime(data.break_out_time);
+    const breakEnd = parseTime(data.break_in_time);
+    const checkOut = parseTime(data.end_time);
+
+    // Calculate total working time
+    let totalWorkingTime = 0;
+    let breakTime = 0;
+
+    if (checkIn && checkOut) {
+      const totalTime = checkOut.getTime() - checkIn.getTime();
+      
+      // Calculate break duration
+      if (breakStart && breakEnd) {
+        breakTime = breakEnd.getTime() - breakStart.getTime();
+      }
+      
+      // Working time = total time - break time
+      totalWorkingTime = totalTime - breakTime;
+    }
+
+    return {
+      totalTime: checkIn && checkOut ? formatDuration(checkOut.getTime() - checkIn.getTime()) : '--:--',
+      breakTime: formatDuration(breakTime),
+      workingTime: formatDuration(totalWorkingTime)
+    };
+  };
+
+  const renderDailySummary = () => {
+    const summary = calculateSummary();
+    
+    return (
+      <Card style={styles.summaryCard}>
+        <Card.Content style={styles.summaryContent}>
+          <View style={styles.summaryHeader}>
+            <MaterialCommunityIcons name="chart-timeline" size={24} color={COLORS.primary} />
+            <Text style={styles.summaryTitle}>Daily Summary</Text>
+          </View>
+          
+          <View style={styles.summaryGrid}>
+            <View style={styles.summaryItem}>
+              <View style={styles.summaryIconContainer}>
+                <MaterialCommunityIcons name="clock" size={20} color={COLORS.status.success} />
+              </View>
+              <Text style={styles.summaryValue}>{summary.workingTime}</Text>
+              <Text style={styles.summaryLabel}>Working Time</Text>
+            </View>
+            
+            <View style={styles.summaryDivider} />
+            
+            <View style={styles.summaryItem}>
+              <View style={styles.summaryIconContainer}>
+                <MaterialCommunityIcons name="coffee" size={20} color={COLORS.status.warning} />
+              </View>
+              <Text style={styles.summaryValue}>{summary.breakTime}</Text>
+              <Text style={styles.summaryLabel}>Break Time</Text>
+            </View>
+            
+            <View style={styles.summaryDivider} />
+            
+            <View style={styles.summaryItem}>
+              <View style={styles.summaryIconContainer}>
+                <MaterialCommunityIcons name="clock-outline" size={20} color={COLORS.status.info} />
+              </View>
+              <Text style={styles.summaryValue}>{summary.totalTime}</Text>
+              <Text style={styles.summaryLabel}>Total Time</Text>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
+    );
+  };
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <LinearGradient
+        colors={['#f8fafc', '#f1f5f9']}
+        style={styles.emptyStateContainer}
+      >
+        <MaterialCommunityIcons 
+          name="calendar-blank-outline" 
+          size={80} 
+          color={COLORS.text.light} 
+        />
+        <Text style={styles.emptyStateTitle}>No Records Found</Text>
+        <Text style={styles.emptyStateSubtitle}>
+          No attendance records found for the selected date.{'\n'}
+          Try selecting a different date.
+        </Text>
+        <Button 
+          mode="contained" 
+          onPress={() => setDatePickerVisible(true)}
+          style={styles.selectDateButton}
+          labelStyle={styles.selectDateButtonText}
+        >
+          Select Date
+        </Button>
+      </LinearGradient>
+    </View>
+  );
 
   if (loading && !refreshing) {
     return (
@@ -260,7 +371,6 @@ const AttendanceScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
       {renderHeader()}
       
       <ScrollView
@@ -269,13 +379,47 @@ const AttendanceScreen = () => {
             refreshing={refreshing}
             onRefresh={handleRefresh}
             colors={[COLORS.primary]}
+            progressBackgroundColor={COLORS.background.surface}
           />
         }
-        style={styles.content}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {renderAttendanceList()}
-        {renderDailySummary()}
+        {!attendance?.success || !attendance?.data ? (
+          renderEmptyState()
+        ) : (
+          <>
+            <View style={styles.attendanceList}>
+              {renderAttendanceCard(
+                'Check In',
+                attendance.data.start_time,
+                attendance.data.start_address,
+                attendance.data.start_image
+              )}
+              {renderAttendanceCard(
+                'Break Start',
+                attendance.data.break_out_time,
+                attendance.data.break_out_address,
+                attendance.data.break_out_image
+              )}
+              {renderAttendanceCard(
+                'Break End',
+                attendance.data.break_in_time,
+                attendance.data.break_in_address,
+                attendance.data.break_in_image
+              )}
+              {renderAttendanceCard(
+                'Check Out',
+                attendance.data.end_time,
+                attendance.data.end_address,
+                attendance.data.end_image
+              )}
+            </View>
+            
+            {renderDailySummary()}
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -284,215 +428,252 @@ const AttendanceScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: '#f8fafc',
   },
   header: {
-    elevation: 4,
+    paddingBottom: SPACING.lg,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-  },
-  appbar: {
-    backgroundColor: 'transparent',
-    elevation: 0,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
   headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTextContainer: {
     flex: 1,
-    marginLeft: SPACING.sm,
+    marginLeft: SPACING.lg,
   },
   headerTitle: {
-    fontSize: TYPOGRAPHY.fontSize['2xl'],
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: COLORS.text.white,
-    marginBottom: SPACING.xs,
-    lineHeight: TYPOGRAPHY.lineHeight.tight,
+    fontSize: 24,
+    fontWeight: '700',
+    color: 'white',
+    marginBottom: 4,
   },
-  headerDate: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.normal,
-    color: COLORS.text.white,
-    opacity: 0.9,
-    lineHeight: TYPOGRAPHY.lineHeight.normal,
+  headerSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.8)',
   },
-  content: {
+  calendarButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollView: {
     flex: 1,
-    padding: SPACING.md,
   },
-  timelineContainer: {
+  scrollContent: {
     padding: SPACING.lg,
-    paddingTop: SPACING.xl,
+    paddingBottom: SPACING['3xl'],
   },
-  timelineItem: {
+  attendanceList: {
+    gap: SPACING.lg,
+  },
+  attendanceCard: {
+    backgroundColor: 'white',
+    borderRadius: BORDER_RADIUS.xl,
     flexDirection: 'row',
-    minHeight: 120,
-  },
-  timelineLeft: {
-    width: 40,
-    alignItems: 'center',
-  },
-  dotContainer: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.background.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.sm,
-  },
-  timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: COLORS.background.surface,
-  },
-  timelineLine: {
-    width: 2,
-    flex: 1,
-    backgroundColor: COLORS.professional.silver,
-    opacity: 0.3,
-    marginTop: SPACING.xs,
-  },
-  timelineContent: {
-    flex: 1,
-    marginLeft: SPACING.md,
-    paddingBottom: SPACING.xl,
-  },
-  timelineHeader: {
-    marginBottom: SPACING.sm,
-  },
-  timelineInfo: {
-    backgroundColor: COLORS.background.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
-    ...SHADOWS.sm,
-  },
-  timelineType: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: COLORS.text.primary,
-    marginBottom: SPACING.xs,
-  },
-  timelineTime: {
-    fontSize: TYPOGRAPHY.fontSize.xl,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.text.primary,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: COLORS.background.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.xs,
-    marginTop: SPACING.sm,
-    ...SHADOWS.sm,
-  },
-  locationText: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: COLORS.text.secondary,
-    flex: 1,
-    marginLeft: SPACING.xs,
-    lineHeight: TYPOGRAPHY.lineHeight.relaxed,
-  },
-  imageContainer: {
-    marginTop: SPACING.sm,
-    borderRadius: BORDER_RADIUS.lg,
     overflow: 'hidden',
-    ...SHADOWS.sm,
-  },
-  timelineImage: {
-    width: '100%',
-    height: 200,
-    backgroundColor: COLORS.background.surface,
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: SPACING.xl,
-  },
-  emptyStateText: {
-    marginTop: SPACING.md,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    marginTop: SPACING.md,
-    color: COLORS.text.secondary,
-  },
-  timelineCard: {
-    backgroundColor: COLORS.background.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
     ...SHADOWS.md,
-    borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    minHeight: 140,
   },
-  timeBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: BORDER_RADIUS.full,
+  cardLeft: {
+    width: 70,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: SPACING.lg,
+    borderLeftWidth: 4,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardContent: {
+    flex: 1,
+    padding: SPACING.lg,
+    paddingLeft: SPACING.md,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+  },
+  timeChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   timeText: {
-    color: COLORS.text.white,
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'white',
   },
-  imageWrapper: {
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+    gap: 8,
+  },
+  locationText: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    lineHeight: 20,
+  },
+  photoContainer: {
     position: 'relative',
-    marginTop: SPACING.sm,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.md,
     overflow: 'hidden',
   },
-  statusBadge: {
+  employeePhoto: {
+    width: '100%',
+    height: 120,
+    backgroundColor: COLORS.background.accent,
+  },
+  photoOverlay: {
     position: 'absolute',
-    top: SPACING.sm,
-    right: SPACING.sm,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: BORDER_RADIUS.full,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
   },
-  statusText: {
-    color: COLORS.text.white,
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+  photoLabel: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
   },
-  summaryContainer: {
-    margin: SPACING.md,
-    padding: SPACING.lg,
-    backgroundColor: COLORS.background.surface,
-    borderRadius: BORDER_RADIUS.lg,
+  summaryCard: {
+    marginTop: SPACING.xl,
+    backgroundColor: 'white',
+    borderRadius: BORDER_RADIUS.xl,
     ...SHADOWS.md,
   },
+  summaryContent: {
+    padding: SPACING.lg,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
+    gap: SPACING.sm,
+  },
   summaryTitle: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    fontSize: 18,
+    fontWeight: '600',
     color: COLORS.text.primary,
-    marginBottom: SPACING.md,
   },
   summaryGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  summaryItem: {
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
+  summaryItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.xs,
+  },
+  summaryIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
+  },
   summaryValue: {
-    fontSize: TYPOGRAPHY.fontSize['2xl'],
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontSize: 18,
+    fontWeight: '700',
     color: COLORS.text.primary,
+    textAlign: 'center',
   },
   summaryLabel: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    fontWeight: TYPOGRAPHY.fontWeight.medium,
+    fontSize: 12,
+    fontWeight: '500',
     color: COLORS.text.secondary,
-    marginTop: SPACING.xs,
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  summaryDivider: {
+    width: 1,
+    height: 50,
+    backgroundColor: '#e2e8f0',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xl,
+  },
+  emptyStateContainer: {
+    width: '100%',
+    padding: SPACING['3xl'],
+    borderRadius: BORDER_RADIUS.xl,
+    alignItems: 'center',
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.sm,
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: SPACING.xl,
+  },
+  selectDateButton: {
+    borderRadius: BORDER_RADIUS.md,
+  },
+  selectDateButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: COLORS.text.secondary,
   },
 });
 
