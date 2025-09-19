@@ -1,0 +1,30 @@
+import React from 'react';
+import { createStackNavigator } from '@react-navigation/stack';
+import AttendanceScreen from '../screens/AttendanceScreen';
+
+export type RootStackParamList = {
+  Home: undefined;
+  Attendance: undefined;
+  Schedule: undefined;
+  // ...add other screens as needed
+};
+
+const Stack = createStackNavigator<RootStackParamList>();
+
+const AppNavigator = () => {
+  return (
+    <Stack.Navigator
+      // ...existing navigator options...
+    >
+      {/* ...existing screen components... */}
+      <Stack.Screen 
+        name="Attendance" 
+        component={AttendanceScreen}
+        options={{ headerShown: false }}
+      />
+      {/* ...other screen components... */}
+    </Stack.Navigator>
+  );
+};
+
+export default AppNavigator;

@@ -341,6 +341,15 @@ const HomeScreen: React.FC = () => {
         console.log('Navigate to settings');
       },
     },
+    {
+      id: 'attendance',
+      title: 'Attendance',
+      icon: 'calendar-check',
+      color: COLORS.accent.blue,
+      onPress: () => {
+        navigation.navigate('Attendance' as never);
+      },
+    },
   ];
 
   // Handle refresh

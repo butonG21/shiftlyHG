@@ -24,6 +24,7 @@ import Animated, {
 import LoginScreen from '../src/screens/LoginScreen';
 import HomeScreen from '../src/screens/HomeScreen';
 import ScheduleScreen from '../src/screens/ScheduleScreen';
+import AttendanceScreen from '../src/screens/AttendanceScreen';
 import { useAuth } from '../src/contexts/AuthContext';
 
 const { width, height } = Dimensions.get('window');
@@ -38,6 +39,7 @@ export type RootStackParamList = {
   ShiftSwap: undefined;
   History: undefined;
   Notifications: undefined;
+  Attendance: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -278,7 +280,7 @@ const AppNavigator: React.FC = () => {
                 animation: 'fade',
               }}
             />
-            {/* Add other authenticated screens here */}
+            <Stack.Screen name="Attendance" component={AttendanceScreen} />
             <Stack.Screen
               name="Schedule"
               component={ScheduleScreen}
@@ -287,24 +289,6 @@ const AppNavigator: React.FC = () => {
                 animation: 'slide_from_right',
               }}
             />
-            {/*
-            <Stack.Screen
-              name="Profile"
-              component={ProfileScreen}
-              options={{
-                title: 'Profil',
-                headerShown: true,
-                headerStyle: {
-                  backgroundColor: '#00425A',
-                },
-                headerTitleStyle: {
-                  color: '#FFFFFF',
-                  fontWeight: '700',
-                },
-                headerTintColor: '#FFFFFF',
-              }}
-            />
-            */}
           </>
         ) : (
           // Unauthenticated stack
