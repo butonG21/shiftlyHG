@@ -9,15 +9,15 @@ import {
   Dimensions,
   Animated,
   TouchableOpacity,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import { 
   TextInput, 
   Button, 
   Text, 
   Card,
-  IconButton,
-  Snackbar
+  IconButton
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,6 +29,113 @@ import { SPACING, BORDER_RADIUS } from '../constants/spacing';
 
 const { width, height } = Dimensions.get('window');
 
+// Custom Snackbar Component
+const CustomSnackbar: React.FC<{
+  visible: boolean;
+  message: string;
+  onDismiss: () => void;
+  type?: 'error' | 'success' | 'warning';
+}> = ({ visible, message, onDismiss, type = 'error' }) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setIsVisible(true);
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      // Animate in
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
+      // Auto dismiss after 5 seconds
+      timeoutRef.current = setTimeout(() => {
+        onDismiss();
+      }, 5000);
+    } else {
+      // Animate out
+      Animated.timing(animatedValue, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsVisible(false);
+      });
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [visible]);
+
+  if (!visible && !isVisible) return null;
+
+  const getBackgroundColor = () => {
+    switch (type) {
+      case 'error': return '#FF5252';
+      case 'success': return '#4CAF50';
+      case 'warning': return '#FF9800';
+      default: return '#FF5252';
+    }
+  };
+
+  const getIcon = () => {
+    switch (type) {
+      case 'error': return 'alert-circle';
+      case 'success': return 'check-circle';
+      case 'warning': return 'alert';
+      default: return 'alert-circle';
+    }
+  };
+
+  return (
+    <Animated.View
+      style={[
+        styles.customSnackbar,
+        {
+          backgroundColor: getBackgroundColor(),
+          transform: [
+            {
+              translateY: animatedValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [100, 0],
+              }),
+            },
+          ],
+          opacity: animatedValue,
+        },
+      ]}
+    >
+      <MaterialCommunityIcons 
+        name={getIcon()} 
+        size={20} 
+        color="#FFFFFF" 
+        style={styles.snackbarIcon}
+      />
+      <Text style={styles.customSnackbarText} numberOfLines={2}>
+        {message}
+      </Text>
+      <TouchableOpacity onPress={onDismiss} style={styles.snackbarCloseButton}>
+        <MaterialCommunityIcons 
+          name="close" 
+          size={20} 
+          color="#FFFFFF" 
+        />
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
 const LoginScreen: React.FC = () => {
   const { login } = useAuth();
   const [username, setUsername] = useState('');
@@ -37,6 +144,7 @@ const LoginScreen: React.FC = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [showSnackbar, setShowSnackbar] = useState(false);
 
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -67,20 +175,50 @@ const LoginScreen: React.FC = () => {
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
-      setError('Username and password are required');
+      showErrorMessage('Username and password are required');
       return;
     }
 
     setLoading(true);
     setError('');
+    setShowSnackbar(false);
 
     try {
       await login(username.trim(), password);
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please try again.');
+      let errorMessage = '';
+      
+      if (err.message.includes('Network Error')) {
+        errorMessage = 'No internet connection. Please check your network and try again.';
+      } else if (err.response?.status === 401) {
+        errorMessage = 'Invalid username or password. Please try again.';
+      } else if (err.response?.status >= 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else {
+        errorMessage = err.message || 'Login failed. Please try again.';
+      }
+      
+      showErrorMessage(errorMessage);
     } finally {
       setLoading(false);
     }
+  };
+
+  const showErrorMessage = (message: string) => {
+    setError(message);
+    setShowSnackbar(true);
+    
+    // Also show native Alert as fallback
+    setTimeout(() => {
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        Alert.alert(
+          'Login Error',
+          message,
+          [{ text: 'OK', onPress: () => {} }],
+          { cancelable: true }
+        );
+      }
+    }, 100);
   };
 
   const handleInputFocus = (field: string) => {
@@ -89,6 +227,16 @@ const LoginScreen: React.FC = () => {
 
   const handleInputBlur = () => {
     setFocusedField(null);
+  };
+
+  const handleDismissSnackbar = () => {
+    setShowSnackbar(false);
+    // Don't clear error immediately to prevent flicker
+    setTimeout(() => {
+      if (!showSnackbar) {
+        setError('');
+      }
+    }, 300);
   };
 
   const isFormValid = username.trim().length > 0 && password.length > 0;
@@ -254,18 +402,6 @@ const LoginScreen: React.FC = () => {
                     </View>
                   </View>
 
-                  {/* Error Message */}
-                  {error ? (
-                    <View style={styles.errorContainer}>
-                      <MaterialCommunityIcons 
-                        name="alert-circle" 
-                        size={20} 
-                        color="#FF5252" 
-                      />
-                      <Text style={styles.errorText}>{error}</Text>
-                    </View>
-                  ) : null}
-
                   {/* Login Button */}
                   <TouchableOpacity 
                     style={[
@@ -330,15 +466,13 @@ const LoginScreen: React.FC = () => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Snackbar for additional feedback */}
-      <Snackbar
-        visible={!!error}
-        onDismiss={() => setError('')}
-        duration={4000}
-        style={{ backgroundColor: '#FF5252' }}
-      >
-        {error}
-      </Snackbar>
+      {/* Custom Snackbar */}
+      <CustomSnackbar
+        visible={showSnackbar}
+        message={error}
+        onDismiss={handleDismissSnackbar}
+        type="error"
+      />
     </View>
   );
 };
@@ -432,7 +566,7 @@ const styles = StyleSheet.create({
   },
   appTagline: {
     fontSize: TYPOGRAPHY.fontSize.base,
-     fontWeight: TYPOGRAPHY.fontWeight.normal,
+    fontWeight: TYPOGRAPHY.fontWeight.normal,
     color: COLORS.text.white,
     textAlign: 'center',
     lineHeight: 24,
@@ -445,10 +579,10 @@ const styles = StyleSheet.create({
     borderColor: COLORS.glass.border,
     backgroundColor: COLORS.glass.background,
     shadowColor: '#000',
-     shadowOffset: { width: 0, height: 8 },
-     shadowOpacity: 0.15,
-     shadowRadius: 16,
-     elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
   cardContent: {
     padding: SPACING.xl,
@@ -459,14 +593,14 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: TYPOGRAPHY.fontSize['2xl'],
-     fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
     color: COLORS.text.primary,
     marginBottom: SPACING.xs,
     textAlign: 'center',
   },
   cardSubtitle: {
     fontSize: TYPOGRAPHY.fontSize.sm,
-     fontWeight: TYPOGRAPHY.fontWeight.medium,
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
     color: COLORS.text.secondary,
     textAlign: 'center',
     lineHeight: 20,
@@ -479,7 +613,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: TYPOGRAPHY.fontSize.sm,
-     fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    fontWeight: TYPOGRAPHY.fontWeight.semibold,
     color: COLORS.text.primary,
     marginLeft: SPACING.xs,
   },
@@ -493,19 +627,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
     shadowColor: '#000',
-     shadowOffset: { width: 0, height: 2 },
-     shadowOpacity: 0.1,
-     shadowRadius: 4,
-     elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   inputWrapperFocused: {
     borderColor: COLORS.secondary,
     backgroundColor: COLORS.background.card,
     shadowColor: '#000',
-     shadowOffset: { width: 0, height: 4 },
-     shadowOpacity: 0.15,
-     shadowRadius: 8,
-     elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   inputIcon: {
     marginRight: SPACING.sm,
@@ -513,7 +647,7 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontSize: TYPOGRAPHY.fontSize.base,
-     fontWeight: TYPOGRAPHY.fontWeight.normal,
+    fontWeight: TYPOGRAPHY.fontWeight.normal,
     color: COLORS.text.primary,
     backgroundColor: 'transparent',
     paddingVertical: SPACING.sm,
@@ -521,38 +655,22 @@ const styles = StyleSheet.create({
   eyeIcon: {
     padding: SPACING.xs,
   },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.status.error,
-    padding: SPACING.sm,
-    borderRadius: BORDER_RADIUS.sm,
-    borderWidth: 1,
-    borderColor: COLORS.status.error,
-  },
-  errorText: {
-    color: COLORS.text.white,
-    fontSize: TYPOGRAPHY.fontSize.sm,
-     fontWeight: TYPOGRAPHY.fontWeight.medium,
-    marginLeft: SPACING.xs,
-    flex: 1,
-  },
   loginButton: {
     borderRadius: BORDER_RADIUS.md,
     overflow: 'hidden',
     shadowColor: '#000',
-     shadowOffset: { width: 0, height: 4 },
-     shadowOpacity: 0.2,
-     shadowRadius: 8,
-     elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
     marginTop: SPACING.xs,
   },
   loginButtonDisabled: {
     shadowColor: '#000',
-     shadowOffset: { width: 0, height: 2 },
-     shadowOpacity: 0.1,
-     shadowRadius: 4,
-     elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   loginButtonGradient: {
     paddingVertical: SPACING.md,
@@ -613,6 +731,38 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.xs,
     fontWeight: TYPOGRAPHY.fontWeight.normal,
     color: COLORS.text.light,
+  },
+  // Custom Snackbar Styles
+  customSnackbar: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 50 : 20,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1000,
+  },
+  snackbarIcon: {
+    marginRight: 12,
+  },
+  customSnackbarText: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  snackbarCloseButton: {
+    marginLeft: 12,
+    padding: 4,
   },
 });
 
