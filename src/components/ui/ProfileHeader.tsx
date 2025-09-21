@@ -53,7 +53,13 @@ const ProfileHeader: React.FC = () => {
               <MaterialCommunityIcons name="weather-sunny" size={20} color={COLORS.text.warning} />
               <Text style={styles.greetingText}>{greeting}</Text>
             </View>
-            <Text style={styles.nameText}>{user?.name || 'User'}</Text>
+            <Text style={styles.nameText}>{
+              user?.name 
+                ? user.name.split(' ').length > 2 
+                  ? `${user.name.split(' ')[0]} ${user.name.split(' ')[1]} ${user.name.split(' ')[2][0]}.` 
+                  : user.name
+                : 'User'
+            }</Text>
             <View style={styles.positionContainer}>
               <MaterialCommunityIcons name="briefcase" size={16} color={COLORS.text.primary} />
               <Text style={styles.positionText}>{user?.position || 'Employee'}</Text>

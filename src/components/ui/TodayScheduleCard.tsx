@@ -54,7 +54,7 @@ const TodayScheduleCard: React.FC = () => {
 
   return (
     <View style={cardStyle}>
-      {/* Header dengan waktu saat ini */}
+      {/* Header Jadwal Hari Ini */}
       <LinearGradient
         colors={COLORS.gradient.accent}
         style={styles.header}
@@ -62,12 +62,9 @@ const TodayScheduleCard: React.FC = () => {
         end={{ x: 1, y: 1 }}
       >
         <View style={styles.headerContent}>
-          <View style={styles.dateContainer}>
-            <MaterialCommunityIcons name="calendar" size={20} color={COLORS.text.white} />
-            <Text style={styles.currentDate}>{formatDate()}</Text>
-          </View>
-          <View style={styles.timeContainer}>
-            <Text style={styles.currentTime}>{formatTime()}</Text>
+          <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="clock" size={20} color={COLORS.text.white} />
+            <Text style={styles.sectionTitle}>Jadwal Hari Ini</Text>
           </View>
         </View>
       </LinearGradient>
@@ -110,10 +107,6 @@ const TodayScheduleCard: React.FC = () => {
         >
         {/* Today's Schedule */}
         <View style={styles.todaySection}>
-          <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="clock" size={20} color={COLORS.text.white} />
-            <Text style={styles.sectionTitle}>Jadwal Hari Ini</Text>
-          </View>
           <Text style={styles.mainMessage}>
             {shiftCategory === 'off' 
               ? `Hari ini Anda ${shiftMessage}` 
@@ -179,31 +172,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 16,
   },
-  dateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  currentDate: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text.white,
-    marginLeft: 8,
-    textTransform: 'capitalize',
-  },
-  timeContainer: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  currentTime: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.text.white,
-    letterSpacing: 1,
-  },
+
   animationWrapper: {
     position: 'relative',
     height: 160,
