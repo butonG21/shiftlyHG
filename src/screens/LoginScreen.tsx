@@ -1,24 +1,19 @@
-// screens/LoginScreen.tsx
+const { width, height } = Dimensions.get('window');
+
+// screens/LoginScreen.tsx - FIXED VERSION NO SCROLLING
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform, 
-  ScrollView,
   Dimensions,
   Animated,
   TouchableOpacity,
   StatusBar,
-  Alert
+  Text,
+  TextInput as RNTextInput
 } from 'react-native';
-import { 
-  TextInput, 
-  Button, 
-  Text, 
-  Card,
-  IconButton
-} from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -27,7 +22,16 @@ import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typography';
 import { SPACING, BORDER_RADIUS } from '../constants/spacing';
 
-const { width, height } = Dimensions.get('window');
+// Custom Text Component to avoid Paper conflicts
+const CustomText: React.FC<{ style?: any; children: React.ReactNode; numberOfLines?: number }> = ({ 
+  style, 
+  children, 
+  numberOfLines 
+}) => (
+  <Text style={style} numberOfLines={numberOfLines}>
+    {children}
+  </Text>
+);
 
 // Custom Snackbar Component
 const CustomSnackbar: React.FC<{
@@ -38,7 +42,6 @@ const CustomSnackbar: React.FC<{
 }> = ({ visible, message, onDismiss, type = 'error' }) => {
   const animatedValue = useRef(new Animated.Value(0)).current;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -76,7 +79,7 @@ const CustomSnackbar: React.FC<{
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [visible]);
+  }, [visible, onDismiss]);
 
   if (!visible && !isVisible) return null;
 
@@ -118,17 +121,17 @@ const CustomSnackbar: React.FC<{
     >
       <MaterialCommunityIcons 
         name={getIcon()} 
-        size={20} 
+        size={18} 
         color="#FFFFFF" 
         style={styles.snackbarIcon}
       />
-      <Text style={styles.customSnackbarText} numberOfLines={2}>
+      <CustomText style={styles.customSnackbarText} numberOfLines={2}>
         {message}
-      </Text>
+      </CustomText>
       <TouchableOpacity onPress={onDismiss} style={styles.snackbarCloseButton}>
         <MaterialCommunityIcons 
           name="close" 
-          size={20} 
+          size={18} 
           color="#FFFFFF" 
         />
       </TouchableOpacity>
@@ -137,7 +140,7 @@ const CustomSnackbar: React.FC<{
 };
 
 const LoginScreen: React.FC = () => {
-  const { login } = useAuth();
+  const { login, error: contextError, clearError } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -150,6 +153,11 @@ const LoginScreen: React.FC = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const logoScale = useRef(new Animated.Value(0.8)).current;
+
+  // Responsive sizing based on screen height
+  const isSmallScreen = height < 700;
+  const isMediumScreen = height >= 700 && height < 800;
+  const isLargeScreen = height >= 800;
 
   useEffect(() => {
     // Entrance animations
@@ -182,17 +190,22 @@ const LoginScreen: React.FC = () => {
     setLoading(true);
     setError('');
     setShowSnackbar(false);
+    clearError(); // Clear context error
 
     try {
+      console.log('🚀 Starting login process...');
       await login(username.trim(), password);
+      console.log('✅ Login successful, user will be redirected...');
     } catch (err: any) {
+      console.log('❌ Login failed:', err.message);
+      
       let errorMessage = '';
       
-      if (err.message.includes('Network Error')) {
+      if (err.message.includes('Network Error') || err.message.includes('network')) {
         errorMessage = 'No internet connection. Please check your network and try again.';
-      } else if (err.response?.status === 401) {
+      } else if (err.message.includes('401') || err.message.includes('Invalid') || err.message.includes('credentials')) {
         errorMessage = 'Invalid username or password. Please try again.';
-      } else if (err.response?.status >= 500) {
+      } else if (err.message.includes('500') || err.message.includes('Server')) {
         errorMessage = 'Server error. Please try again later.';
       } else {
         errorMessage = err.message || 'Login failed. Please try again.';
@@ -205,20 +218,9 @@ const LoginScreen: React.FC = () => {
   };
 
   const showErrorMessage = (message: string) => {
+    console.log('🔴 Showing error message:', message);
     setError(message);
     setShowSnackbar(true);
-    
-    // Also show native Alert as fallback
-    setTimeout(() => {
-      if (Platform.OS === 'ios' || Platform.OS === 'android') {
-        Alert.alert(
-          'Login Error',
-          message,
-          [{ text: 'OK', onPress: () => {} }],
-          { cancelable: true }
-        );
-      }
-    }, 100);
   };
 
   const handleInputFocus = (field: string) => {
@@ -230,16 +232,25 @@ const LoginScreen: React.FC = () => {
   };
 
   const handleDismissSnackbar = () => {
+    console.log('📝 Dismissing snackbar...');
     setShowSnackbar(false);
-    // Don't clear error immediately to prevent flicker
     setTimeout(() => {
-      if (!showSnackbar) {
-        setError('');
-      }
+      setError('');
     }, 300);
   };
 
   const isFormValid = username.trim().length > 0 && password.length > 0;
+
+  // Dynamic styles based on screen size
+  const dynamicStyles = {
+    logoSize: isSmallScreen ? 60 : isMediumScreen ? 80 : 100,
+    logoIconSize: isSmallScreen ? 28 : isMediumScreen ? 34 : 40,
+    appNameSize: isSmallScreen ? 28 : isMediumScreen ? 32 : 36,
+    cardPadding: isSmallScreen ? 16 : isMediumScreen ? 20 : 24,
+    inputPadding: isSmallScreen ? 12 : 16,
+    spacing: isSmallScreen ? 12 : isMediumScreen ? 16 : 20,
+    containerPadding: isSmallScreen ? 16 : 20,
+  };
 
   return (
     <View style={styles.container}>
@@ -266,76 +277,103 @@ const LoginScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
+        <View style={styles.scrollContainer}>
           <Animated.View 
             style={[
               styles.content,
               {
                 opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }]
+                transform: [{ translateY: slideAnim }],
+                paddingHorizontal: dynamicStyles.containerPadding
               }
             ]}
           >
-            {/* Logo Section */}
-            <View style={styles.logoSection}>
+            {/* Logo Section - Compact */}
+            <View style={[styles.logoSection, { marginBottom: dynamicStyles.spacing }]}>
               <Animated.View 
                 style={[
-                  styles.logoContainer,
-                  { transform: [{ scale: logoScale }] }
+                  { transform: [{ scale: logoScale }] },
+                  { marginBottom: isSmallScreen ? 8 : 12 }
                 ]}
               >
                 <LinearGradient
                   colors={[COLORS.secondary, COLORS.secondaryDark]}
-                  style={styles.logoGradient}
+                  style={[styles.logoGradient, {
+                    width: dynamicStyles.logoSize,
+                    height: dynamicStyles.logoSize,
+                    borderRadius: dynamicStyles.logoSize / 2,
+                  }]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
                   <MaterialCommunityIcons 
                     name="calendar-clock" 
-                    size={40} 
+                    size={dynamicStyles.logoIconSize} 
                     color="#FFFFFF" 
                   />
                 </LinearGradient>
               </Animated.View>
               
-              <Text style={styles.appName}>Shiftly</Text>
-              <Text style={styles.appTagline}>
-                Smart Shift Management{"\n"}for Modern Workforce
-              </Text>
+              <CustomText style={[styles.appName, { 
+                fontSize: dynamicStyles.appNameSize,
+                marginBottom: isSmallScreen ? 4 : 8 
+              }]}>
+                Shiftly
+              </CustomText>
+              <CustomText style={[styles.appTagline, {
+                fontSize: isSmallScreen ? 13 : 14,
+                lineHeight: isSmallScreen ? 18 : 20
+              }]}>
+                Smart Shift Management{isSmallScreen ? ' for Modern Workforce' : '\nfor Modern Workforce'}
+              </CustomText>
             </View>
 
             {/* Login Card */}
             <BlurView intensity={20} tint="light" style={styles.loginCard}>
-              <View style={styles.cardContent}>
+              <View style={[styles.cardContent, { padding: dynamicStyles.cardPadding }]}>
                 {/* Card Header */}
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitle}>Welcome Back</Text>
-                  <Text style={styles.cardSubtitle}>
+                <View style={[styles.cardHeader, { marginBottom: dynamicStyles.spacing }]}>
+                  <CustomText style={[styles.cardTitle, {
+                    fontSize: isSmallScreen ? 18 : isMediumScreen ? 20 : 24,
+                    marginBottom: isSmallScreen ? 4 : 6
+                  }]}>
+                    Welcome Back
+                  </CustomText>
+                  <CustomText style={[styles.cardSubtitle, {
+                    fontSize: isSmallScreen ? 12 : 13,
+                    lineHeight: isSmallScreen ? 16 : 18
+                  }]}>
                     Sign in to your account to continue
-                  </Text>
+                  </CustomText>
                 </View>
 
                 {/* Form */}
-                <View style={styles.formContainer}>
+                <View style={[styles.formContainer, { gap: dynamicStyles.spacing }]}>
                   {/* Username Input */}
                   <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Username</Text>
+                    <CustomText style={[styles.inputLabel, {
+                      fontSize: isSmallScreen ? 12 : 13,
+                      marginBottom: 6
+                    }]}>Username</CustomText>
                     <View style={[
                       styles.inputWrapper,
-                      focusedField === 'username' && styles.inputWrapperFocused
+                      focusedField === 'username' && styles.inputWrapperFocused,
+                      { 
+                        paddingHorizontal: dynamicStyles.inputPadding,
+                        paddingVertical: isSmallScreen ? 8 : 10
+                      }
                     ]}>
                       <MaterialCommunityIcons 
                         name="account" 
-                        size={20} 
+                        size={isSmallScreen ? 18 : 20} 
                         color={focusedField === 'username' ? COLORS.secondary : COLORS.text.secondary}
                         style={styles.inputIcon}
                       />
-                      <TextInput
-                        style={styles.textInput}
+                      <RNTextInput
+                        style={[styles.textInput, {
+                          fontSize: isSmallScreen ? 14 : 16,
+                          paddingVertical: isSmallScreen ? 8 : 12
+                        }]}
                         value={username}
                         onChangeText={setUsername}
                         placeholder="Enter your username"
@@ -344,34 +382,35 @@ const LoginScreen: React.FC = () => {
                         autoCorrect={false}
                         onFocus={() => handleInputFocus('username')}
                         onBlur={handleInputBlur}
-                        underlineColor="transparent"
-                        activeUnderlineColor="transparent"
-                        mode="flat"
-                        theme={{
-                          colors: {
-                            primary: 'transparent',
-                            background: 'transparent',
-                          }
-                        }}
                       />
                     </View>
                   </View>
 
                   {/* Password Input */}
                   <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Password</Text>
+                    <CustomText style={[styles.inputLabel, {
+                      fontSize: isSmallScreen ? 12 : 13,
+                      marginBottom: 6
+                    }]}>Password</CustomText>
                     <View style={[
                       styles.inputWrapper,
-                      focusedField === 'password' && styles.inputWrapperFocused
+                      focusedField === 'password' && styles.inputWrapperFocused,
+                      { 
+                        paddingHorizontal: dynamicStyles.inputPadding,
+                        paddingVertical: isSmallScreen ? 8 : 10
+                      }
                     ]}>
                       <MaterialCommunityIcons 
                         name="lock" 
-                        size={20} 
+                        size={isSmallScreen ? 18 : 20} 
                         color={focusedField === 'password' ? COLORS.secondary : COLORS.text.secondary}
                         style={styles.inputIcon}
                       />
-                      <TextInput
-                        style={styles.textInput}
+                      <RNTextInput
+                        style={[styles.textInput, {
+                          fontSize: isSmallScreen ? 14 : 16,
+                          paddingVertical: isSmallScreen ? 8 : 12
+                        }]}
                         value={password}
                         onChangeText={setPassword}
                         placeholder="Enter your password"
@@ -379,15 +418,6 @@ const LoginScreen: React.FC = () => {
                         secureTextEntry={!showPassword}
                         onFocus={() => handleInputFocus('password')}
                         onBlur={handleInputBlur}
-                        underlineColor="transparent"
-                        activeUnderlineColor="transparent"
-                        mode="flat"
-                        theme={{
-                          colors: {
-                            primary: 'transparent',
-                            background: 'transparent',
-                          }
-                        }}
                       />
                       <TouchableOpacity 
                         onPress={() => setShowPassword(!showPassword)}
@@ -395,7 +425,7 @@ const LoginScreen: React.FC = () => {
                       >
                         <MaterialCommunityIcons 
                           name={showPassword ? 'eye-off' : 'eye'} 
-                          size={20} 
+                          size={isSmallScreen ? 18 : 20} 
                           color={focusedField === 'password' ? COLORS.secondary : COLORS.text.secondary}
                         />
                       </TouchableOpacity>
@@ -406,7 +436,8 @@ const LoginScreen: React.FC = () => {
                   <TouchableOpacity 
                     style={[
                       styles.loginButton,
-                      (!isFormValid || loading) && styles.loginButtonDisabled
+                      (!isFormValid || loading) && styles.loginButtonDisabled,
+                      { marginTop: isSmallScreen ? 8 : 12 }
                     ]}
                     onPress={handleLogin}
                     disabled={!isFormValid || loading}
@@ -414,7 +445,10 @@ const LoginScreen: React.FC = () => {
                   >
                     <LinearGradient
                       colors={isFormValid && !loading ? [COLORS.secondary, COLORS.secondaryDark] : [COLORS.text.light, COLORS.background.secondary]}
-                      style={styles.loginButtonGradient}
+                      style={[styles.loginButtonGradient, {
+                        paddingVertical: isSmallScreen ? 14 : 16,
+                        paddingHorizontal: isSmallScreen ? 20 : 24
+                      }]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                     >
@@ -422,18 +456,22 @@ const LoginScreen: React.FC = () => {
                         <View style={styles.loadingContainer}>
                           <MaterialCommunityIcons 
                             name="loading" 
-                            size={20} 
+                            size={isSmallScreen ? 18 : 20} 
                             color="#FFFFFF"
                             style={styles.loadingIcon}
                           />
-                          <Text style={styles.loginButtonText}>Signing in...</Text>
+                          <CustomText style={[styles.loginButtonText, {
+                            fontSize: isSmallScreen ? 14 : 16
+                          }]}>Signing in...</CustomText>
                         </View>
                       ) : (
                         <View style={styles.buttonContent}>
-                          <Text style={styles.loginButtonText}>Sign In</Text>
+                          <CustomText style={[styles.loginButtonText, {
+                            fontSize: isSmallScreen ? 14 : 16
+                          }]}>Sign In</CustomText>
                           <MaterialCommunityIcons 
                             name="arrow-right" 
-                            size={20} 
+                            size={isSmallScreen ? 18 : 20} 
                             color="#FFFFFF" 
                           />
                         </View>
@@ -443,36 +481,54 @@ const LoginScreen: React.FC = () => {
                 </View>
 
                 {/* Additional Options */}
-                <View style={styles.additionalOptions}>
+                <View style={[styles.additionalOptions, {
+                  marginTop: isSmallScreen ? 12 : 16
+                }]}>
                   <TouchableOpacity style={styles.forgotPassword}>
-                    <Text style={styles.forgotPasswordText}>
+                    <CustomText style={[styles.forgotPasswordText, {
+                      fontSize: isSmallScreen ? 12 : 13
+                    }]}>
                       Forgot password?
-                    </Text>
+                    </CustomText>
                   </TouchableOpacity>
                 </View>
               </View>
             </BlurView>
 
             {/* Footer */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                © 2025 Shiftly • Crafted with 💜 by AF • Empowering Modern Workplaces
-              </Text>
-              <View style={styles.versionContainer}>
-                <Text style={styles.versionText}>v2.1.0</Text>
+            <View style={[styles.footer, { 
+              marginTop: dynamicStyles.spacing,
+              gap: isSmallScreen ? 8 : 12 
+            }]}>
+              <CustomText style={[styles.footerText, {
+                fontSize: isSmallScreen ? 11 : 12,
+                lineHeight: isSmallScreen ? 14 : 16
+              }]}>
+                © 2025 Shiftly • Crafted with 💜 by AF
+                {!isSmallScreen && '\nEmpowering Modern Workplaces'}
+              </CustomText>
+              <View style={[styles.versionContainer, {
+                paddingHorizontal: isSmallScreen ? 8 : 10,
+                paddingVertical: isSmallScreen ? 4 : 6
+              }]}>
+                <CustomText style={[styles.versionText, {
+                  fontSize: isSmallScreen ? 10 : 11
+                }]}>v2.1.0</CustomText>
               </View>
             </View>
           </Animated.View>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
 
-      {/* Custom Snackbar */}
-      <CustomSnackbar
-        visible={showSnackbar}
-        message={error}
-        onDismiss={handleDismissSnackbar}
-        type="error"
-      />
+      {/* Custom Snackbar - Fixed Positioning */}
+      <View style={styles.snackbarOverlay} pointerEvents="box-none">
+        <CustomSnackbar
+          visible={showSnackbar}
+          message={error}
+          onDismiss={handleDismissSnackbar}
+          type="error"
+        />
+      </View>
     </View>
   );
 };
@@ -527,49 +583,40 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 40,
+    paddingVertical: 30,
   },
   content: {
     alignItems: 'center',
+    minHeight: height - 60,
+    justifyContent: 'center',
   },
   logoSection: {
     alignItems: 'center',
-    marginBottom: SPACING['2xl'],
-  },
-  logoContainer: {
-    marginBottom: SPACING.xl,
   },
   logoGradient: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: COLORS.secondary,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 15,
-    borderWidth: 3,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
+    borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   appName: {
-    fontSize: TYPOGRAPHY.fontSize['4xl'],
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.text.white,
-    marginBottom: SPACING.xs,
-    letterSpacing: 3,
+    letterSpacing: 2,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 8,
   },
   appTagline: {
-    fontSize: TYPOGRAPHY.fontSize.base,
     fontWeight: TYPOGRAPHY.fontWeight.normal,
     color: COLORS.text.white,
     textAlign: 'center',
-    lineHeight: 24,
+    opacity: 0.9,
   },
   loginCard: {
     width: '100%',
@@ -583,47 +630,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 8,
+    marginVertical: 20,
   },
   cardContent: {
-    padding: SPACING.xl,
+    // Remove flex: 1 that was causing issues
   },
   cardHeader: {
     alignItems: 'center',
-    marginBottom: SPACING.lg,
   },
   cardTitle: {
-    fontSize: TYPOGRAPHY.fontSize['2xl'],
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
     color: COLORS.text.primary,
-    marginBottom: SPACING.xs,
     textAlign: 'center',
   },
   cardSubtitle: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.medium,
     color: COLORS.text.secondary,
     textAlign: 'center',
-    lineHeight: 20,
   },
   formContainer: {
-    gap: SPACING.lg,
+    // Remove flex that was causing form to disappear
   },
   inputContainer: {
-    gap: SPACING.xs,
+    // No specific height, let content determine
   },
   inputLabel: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
     color: COLORS.text.primary,
-    marginLeft: SPACING.xs,
+    marginLeft: 4,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.glass.background,
     borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
     borderWidth: 2,
     borderColor: 'transparent',
     shadowColor: '#000',
@@ -642,18 +682,18 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   inputIcon: {
-    marginRight: SPACING.sm,
+    marginRight: 8,
   },
   textInput: {
     flex: 1,
-    fontSize: TYPOGRAPHY.fontSize.base,
     fontWeight: TYPOGRAPHY.fontWeight.normal,
     color: COLORS.text.primary,
     backgroundColor: 'transparent',
-    paddingVertical: SPACING.sm,
+    borderWidth: 0,
+    outlineWidth: 0,
   },
   eyeIcon: {
-    padding: SPACING.xs,
+    padding: 8,
   },
   loginButton: {
     borderRadius: BORDER_RADIUS.md,
@@ -663,7 +703,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 6,
-    marginTop: SPACING.xs,
   },
   loginButtonDisabled: {
     shadowColor: '#000',
@@ -673,8 +712,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   loginButtonGradient: {
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -683,7 +720,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingIcon: {
-    marginRight: SPACING.xs,
+    marginRight: 8,
   },
   buttonContent: {
     flexDirection: 'row',
@@ -691,78 +728,78 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loginButtonText: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.text.white,
-    marginRight: SPACING.xs,
+    marginRight: 8,
   },
   additionalOptions: {
     alignItems: 'center',
-    marginTop: SPACING.md,
   },
   forgotPassword: {
-    paddingVertical: SPACING.xs,
+    paddingVertical: 8,
   },
   forgotPasswordText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.normal,
     color: COLORS.text.secondary,
   },
   footer: {
     alignItems: 'center',
-    marginTop: SPACING['2xl'],
-    gap: SPACING.sm,
   },
   footerText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.normal,
     color: COLORS.text.white,
     textAlign: 'center',
+    opacity: 0.8,
   },
   versionContainer: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
     backgroundColor: COLORS.glass.background,
     borderRadius: BORDER_RADIUS.sm,
     borderWidth: 1,
     borderColor: COLORS.glass.border,
   },
   versionText: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
     fontWeight: TYPOGRAPHY.fontWeight.normal,
     color: COLORS.text.light,
+  },
+  // Fixed Snackbar Overlay
+  snackbarOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    elevation: 9999,
   },
   // Custom Snackbar Styles
   customSnackbar: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 50 : 20,
-    left: 20,
-    right: 20,
+    bottom: Platform.OS === 'ios' ? 40 : 25,
+    left: 16,
+    right: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 1000,
+    shadowRadius: 10,
+    elevation: 12,
+    zIndex: 10000,
   },
   snackbarIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
   customSnackbarText: {
     flex: 1,
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     lineHeight: 20,
   },
   snackbarCloseButton: {
-    marginLeft: 12,
-    padding: 4,
+    padding: 6,
   },
 });
 
