@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.tsx
+// src/contexts/AuthContext.tsx - FIXED VERSION
 import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as authService from '../services/authService';
@@ -9,7 +9,7 @@ import { STORAGE_KEYS } from '../constants/storage';
 // Enhanced AuthContext type
 export interface AuthContextType {
   user: User | null;
-  loading: boolean;
+  loading: boolean; // Only for initial app loading
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -27,7 +27,7 @@ const TOKEN_EXPIRY_HOURS = 24;
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true); // Only for app initialization
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
@@ -49,10 +49,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return hoursSinceLogin > TOKEN_EXPIRY_HOURS;
   }, []);
 
-  // Enhanced login function with simplified error handling
+  // 🚀 FIXED: Login function - NO setLoading(true) during login process
   const login = async (username: string, password: string): Promise<void> => {
     try {
-      setLoading(true);
+      // ❌ REMOVED: setLoading(true); // This was causing LoadingScreen to appear
       setError(null);
 
       // Validate inputs
@@ -104,14 +104,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Clear any partial auth data on error
       await clearAuthData();
       
+      // Re-throw error to let LoginScreen handle it and show Snackbar
       if (error instanceof Error) {
         setError(error.message);
+        throw error; // Important: Re-throw for LoginScreen to catch
       } else {
-        setError('Terjadi kesalahan saat login. Silakan coba lagi.');
+        const errorMsg = 'Terjadi kesalahan saat login. Silakan coba lagi.';
+        setError(errorMsg);
+        throw new Error(errorMsg);
       }
-    } finally {
-      setLoading(false);
     }
+    // ❌ REMOVED: finally { setLoading(false); } // Let LoginScreen handle loading state
   };
 
   // Enhanced logout function
@@ -176,7 +179,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Update profile function
   const updateProfile = async (updates: Partial<User>): Promise<void> => {
     try {
-      setLoading(true);
+      // Don't use global loading for profile updates
       setError(null);
       
       console.log('Updating profile with:', updates);
@@ -192,11 +195,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       if (error instanceof Error) {
         setError(error.message);
+        throw error; // Let calling component handle the error
       } else {
-        setError('Gagal memperbarui profil. Silakan coba lagi.');
+        const errorMsg = 'Gagal memperbarui profil. Silakan coba lagi.';
+        setError(errorMsg);
+        throw new Error(errorMsg);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -268,7 +272,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error('Auth initialization error:', error);
         await clearAuthData();
       } finally {
-        setLoading(false);
+        setLoading(false); // Only set to false after initialization
       }
     };
     
@@ -277,7 +281,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const contextValue: AuthContextType = {
     user,
-    loading,
+    loading, // Only true during app initialization
     isAuthenticated,
     login,
     logout,
