@@ -148,11 +148,14 @@ const LoginScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [showSnackbar, setShowSnackbar] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState(1);
 
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const logoScale = useRef(new Animated.Value(0.8)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   // Responsive sizing based on screen height
   const isSmallScreen = height < 700;
@@ -181,23 +184,90 @@ const LoginScreen: React.FC = () => {
     ]).start();
   }, []);
 
+  useEffect(() => {
+    if (loading) {
+      // Start spinning animation when loading
+      const spinAnimation = Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      );
+      spinAnimation.start();
+
+      return () => {
+        spinAnimation.stop();
+        spinAnim.setValue(0);
+      };
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (loading) {
+      // Animate progress bar
+      Animated.timing(progressAnim, {
+        toValue: loadingPhase,
+        duration: 500,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [loadingPhase, loading]);
+
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
       showErrorMessage('Username and password are required');
       return;
     }
 
-    setLoading(true);
+    // Clear previous errors but don't show loading yet
     setError('');
     setShowSnackbar(false);
-    clearError(); // Clear context error
+    clearError();
 
     try {
       console.log('🚀 Starting login process...');
+      
+      // Call login function - if it doesn't throw, credentials are valid
       await login(username.trim(), password);
-      console.log('✅ Login successful, user will be redirected...');
+      
+      // If we reach here, login was successful
+      console.log('✅ Login successful, showing loading screen...');
+      setLoading(true); // Show loading screen ONLY on success
+      
+      // Show loading screen for longer duration with phases
+      setTimeout(() => {
+        console.log('🎯 Phase 1: Authentication complete...');
+        setLoadingPhase(1);
+      }, 500);
+      
+      setTimeout(() => {
+        console.log('📊 Phase 2: Loading user data...');
+        setLoadingPhase(2);
+      }, 1500);
+      
+      setTimeout(() => {
+        console.log('🏠 Phase 3: Preparing dashboard...');
+        setLoadingPhase(3);
+      }, 2500);
+      
+      setTimeout(() => {
+        console.log('✅ Phase 4: Almost ready...');
+        setLoadingPhase(4);
+      }, 3500);
+      
+      setTimeout(() => {
+        console.log('✅ Redirecting to dashboard...');
+        setLoading(false); // Hide loading before navigation
+        setLoadingPhase(1); // Reset phase
+        // AuthContext will handle navigation automatically
+      }, 4500); // Total 4.5 seconds loading time
+      
     } catch (err: any) {
       console.log('❌ Login failed:', err.message);
+      
+      // Don't show loading screen for failed attempts
+      setLoading(false);
       
       let errorMessage = '';
       
@@ -211,9 +281,8 @@ const LoginScreen: React.FC = () => {
         errorMessage = err.message || 'Login failed. Please try again.';
       }
       
+      // Show error snackbar immediately for failed attempts
       showErrorMessage(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -237,6 +306,36 @@ const LoginScreen: React.FC = () => {
     setTimeout(() => {
       setError('');
     }, 300);
+  };
+
+  const getLoadingText = () => {
+    switch (loadingPhase) {
+      case 1:
+        return {
+          title: "Login Successful!",
+          subtitle: "Verifying your credentials..."
+        };
+      case 2:
+        return {
+          title: "Welcome Back!",
+          subtitle: "Loading your profile data..."
+        };
+      case 3:
+        return {
+          title: "Almost Ready!",
+          subtitle: "Preparing your dashboard..."
+        };
+      case 4:
+        return {
+          title: "All Set!",
+          subtitle: "Redirecting to your workspace..."
+        };
+      default:
+        return {
+          title: "Login Successful!",
+          subtitle: "Redirecting to your dashboard..."
+        };
+    }
   };
 
   const isFormValid = username.trim().length > 0 && password.length > 0;
@@ -529,6 +628,89 @@ const LoginScreen: React.FC = () => {
           type="error"
         />
       </View>
+
+      {/* Loading Overlay - Only shows on successful login */}
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <LinearGradient
+            colors={['#667eea', '#764ba2', '#1e3c72']}
+            style={StyleSheet.absoluteFillObject}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+          
+          {/* Background Pattern */}
+          <View style={styles.loadingPattern}>
+            <View style={[styles.loadingPatternCircle, styles.loadingCircle1]} />
+            <View style={[styles.loadingPatternCircle, styles.loadingCircle2]} />
+            <View style={[styles.loadingPatternCircle, styles.loadingCircle3]} />
+          </View>
+
+          <View style={styles.loadingContent}>
+            {/* Success Logo */}
+            <View style={styles.successLogoContainer}>
+              <LinearGradient
+                colors={[COLORS.secondary, COLORS.secondaryDark]}
+                style={styles.successLogo}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <MaterialCommunityIcons 
+                  name="check-circle" 
+                  size={40} 
+                  color="#FFFFFF" 
+                />
+              </LinearGradient>
+            </View>
+
+            <CustomText style={styles.loadingTitle}>{getLoadingText().title}</CustomText>
+            <CustomText style={styles.loadingSubtitle}>{getLoadingText().subtitle}</CustomText>
+            
+            {/* Progress Indicator */}
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <Animated.View 
+                  style={[
+                    styles.progressFill, 
+                    {
+                      width: progressAnim.interpolate({
+                        inputRange: [0, 4],
+                        outputRange: ['0%', '100%'],
+                        extrapolate: 'clamp',
+                      }),
+                    }
+                  ]} 
+                />
+              </View>
+              <CustomText style={styles.progressText}>
+                Step {loadingPhase} of 4
+              </CustomText>
+            </View>
+            
+            {/* Loading Indicator */}
+            <View style={styles.loadingIndicator}>
+              <Animated.View
+                style={{
+                  transform: [
+                    {
+                      rotate: spinAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0deg', '360deg'],
+                      }),
+                    },
+                  ],
+                }}
+              >
+                <MaterialCommunityIcons 
+                  name="loading" 
+                  size={24} 
+                  color="#FFFFFF"
+                />
+              </Animated.View>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -800,6 +982,112 @@ const styles = StyleSheet.create({
   },
   snackbarCloseButton: {
     padding: 6,
+  },
+  // Loading Overlay Styles
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10000,
+    elevation: 10000,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingPattern: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  loadingPatternCircle: {
+    position: 'absolute',
+    borderRadius: 200,
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+  },
+  loadingCircle1: {
+    width: 250,
+    height: 250,
+    top: -125,
+    right: -125,
+    backgroundColor: 'rgba(99, 102, 241, 0.06)',
+  },
+  loadingCircle2: {
+    width: 150,
+    height: 150,
+    bottom: -75,
+    left: -75,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  },
+  loadingCircle3: {
+    width: 100,
+    height: 100,
+    top: '40%',
+    left: '10%',
+    backgroundColor: 'rgba(139, 92, 246, 0.05)',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  successLogoContainer: {
+    marginBottom: 24,
+    shadowColor: COLORS.secondary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  successLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  loadingTitle: {
+    fontSize: 24,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.text.white,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  loadingSubtitle: {
+    fontSize: 16,
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  progressContainer: {
+    width: '80%',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  progressBar: {
+    width: '100%',
+    height: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  loadingIndicator: {
+    alignItems: 'center',
   },
 });
 

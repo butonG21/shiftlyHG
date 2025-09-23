@@ -50,95 +50,83 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   // 🚀 FIXED: Login function - NO setLoading(true) during login process
-  const login = async (username: string, password: string): Promise<void> => {
-    try {
-      // ❌ REMOVED: setLoading(true); // This was causing LoadingScreen to appear
-      setError(null);
+const login = async (username: string, password: string): Promise<void> => {
+  try {
+    setError(null);
 
-      // Validate inputs
-      if (!username.trim()) {
-        throw new Error('Username tidak boleh kosong');
-      }
-      if (!password.trim()) {
-        throw new Error('Password tidak boleh kosong');
-      }
-
-      console.log('Attempting login for user:', username);
-      
-      const loginData = await authService.loginUser(username.trim(), password);
-      console.log('Login response:', JSON.stringify(loginData, null, 2));
-      
-      // Check if login data contains token
-      if (!loginData.token) {
-        console.error('Invalid login response:', loginData);
-        throw new Error('Login response tidak mengandung token yang valid');
-      }
-      
-      const token = loginData.token;
-      const userData = loginData.user;
-      
-      console.log('Login successful, received token');
-
-      // Store token and login time
-      await AsyncStorage.multiSet([
-        [STORAGE_KEYS.TOKEN, token],
-        [STORAGE_KEYS.LOGIN_TIME, new Date().toISOString()],
-      ]);
-      
-      // Get user profile from server to get complete data
-      const profile = await authService.getUserProfile();
-      console.log('Profile loaded successfully');
-      
-      // Cache profile
-      await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
-      
-      // Set user state and authentication status
-      setUser(profile);
-      setIsAuthenticated(true);
-      setError(null);
-      
-      console.log('Login process completed successfully');
-    } catch (error) {
-      console.error('Login error:', error);
-      
-      // Clear any partial auth data on error
-      await clearAuthData();
-      
-      // Re-throw error to let LoginScreen handle it and show Snackbar
-      if (error instanceof Error) {
-        setError(error.message);
-        throw error; // Important: Re-throw for LoginScreen to catch
-      } else {
-        const errorMsg = 'Terjadi kesalahan saat login. Silakan coba lagi.';
-        setError(errorMsg);
-        throw new Error(errorMsg);
-      }
+    // ✅ Validate inputs BEFORE showing loading screen
+    if (!username.trim()) {
+      throw new Error('Username tidak boleh kosong');
     }
-    // ❌ REMOVED: finally { setLoading(false); } // Let LoginScreen handle loading state
-  };
+    if (!password.trim()) {
+      throw new Error('Password tidak boleh kosong');
+    }
 
+    // ✅ Only show loading screen for actual network requests
+    console.log('Attempting login for user:', username);
+    
+    const loginData = await authService.loginUser(username.trim(), password);
+    
+    if (!loginData.token) {
+      throw new Error('Login response tidak mengandung token yang valid');
+    }
+    
+    const token = loginData.token;
+    
+    await AsyncStorage.multiSet([
+      [STORAGE_KEYS.TOKEN, token],
+      [STORAGE_KEYS.LOGIN_TIME, new Date().toISOString()],
+    ]);
+        setLoading(true);
+
+    const profile = await authService.getUserProfile();
+    await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+    
+    setUser(profile);
+    setIsAuthenticated(true);
+    setError(null);
+    
+  } catch (error) {
+    // ✅ Only clear auth data for network/auth errors, not validation errors
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    if (!errorMessage.includes('tidak boleh kosong')) {
+      // Only clear auth data for actual login failures, not validation
+      await clearAuthData();
+    }
+    
+    setError(errorMessage);
+    throw error;
+  } finally {
+    setLoading(false); // ✅ Always hide loading screen
+  }
+};
   // Enhanced logout function
-  const logout = async (): Promise<void> => {
+const logout = async (): Promise<void> => {
+  try {
+    setLoading(true); // ✅ Show loading screen during logout
+    console.log('Logging out user...');
+    
+    // Call logout service to clear server-side session if needed
     try {
-      setLoading(true);
-      console.log('Logging out user...');
-      
-      // Call logout service to clear server-side session if needed
       await authService.logoutUser();
-      
-      // Clear local auth data
-      await clearAuthData();
-      
-      console.log('Logout completed successfully');
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Even if logout fails, clear local data
-      await clearAuthData();
-    } finally {
-      setLoading(false);
+    } catch (serviceError) {
+      console.warn('Logout service error (continuing with local cleanup):', serviceError);
+      // Continue with local cleanup even if server logout fails
     }
-  };
-
+    
+    // Clear local auth data
+    await clearAuthData();
+    
+    console.log('Logout completed successfully');
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Even if logout fails, clear local data
+    await clearAuthData();
+  } finally {
+    setLoading(false); // ✅ Hide loading screen
+  }
+};
   // Refresh profile function
   const refreshProfile = useCallback(async (): Promise<void> => {
     try {

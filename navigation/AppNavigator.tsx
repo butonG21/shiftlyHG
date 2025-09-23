@@ -1,4 +1,4 @@
-// navigation/AppNavigator.tsx
+// navigation/AppNavigator.tsx - FIXED VERSION
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { 
@@ -25,7 +25,9 @@ import LoginScreen from '../src/screens/LoginScreen';
 import HomeScreen from '../src/screens/HomeScreen';
 import ScheduleScreen from '../src/screens/ScheduleScreen';
 import AttendanceScreen from '../src/screens/AttendanceScreen';
+import AttendanceDetailScreen from '../src/screens/AttendanceDetailScreen';
 import { useAuth } from '../src/contexts/AuthContext';
+import { AttendanceRecord } from '../src/types/attendance';
 
 const { width, height } = Dimensions.get('window');
 
@@ -40,12 +42,15 @@ export type RootStackParamList = {
   History: undefined;
   Notifications: undefined;
   Attendance: undefined;
+  AttendanceDetail: {
+    attendance: AttendanceRecord;
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Modern Splash Screen Component with Purple-Blue Gradient
-const LoadingScreen: React.FC = () => {
+// Initial App Loading Screen (only for app startup)
+const InitialLoadingScreen: React.FC = () => {
   const rotation = useSharedValue(0);
   const scale = useSharedValue(0.8);
   const scale2 = useSharedValue(1);
@@ -256,9 +261,10 @@ class ErrorBoundary extends React.Component<
 const AppNavigator: React.FC = () => {
   const { user, loading, isAuthenticated } = useAuth();
 
-  // Show loading screen while checking authentication
-  if (loading) {
-    return <LoadingScreen />;
+  // Show initial loading screen only during app startup
+  // NOT during login process (login screen handles its own loading)
+  if (loading && !isAuthenticated && !user) {
+    return <InitialLoadingScreen />;
   }
 
   return (
@@ -281,6 +287,14 @@ const AppNavigator: React.FC = () => {
               }}
             />
             <Stack.Screen name="Attendance" component={AttendanceScreen} />
+            <Stack.Screen 
+              name="AttendanceDetail" 
+              component={AttendanceDetailScreen}
+              options={{
+                headerShown: false,
+                animation: 'slide_from_right',
+              }}
+            />
             <Stack.Screen
               name="Schedule"
               component={ScheduleScreen}
@@ -291,7 +305,7 @@ const AppNavigator: React.FC = () => {
             />
           </>
         ) : (
-          // Unauthenticated stack
+          // Unauthenticated stack - Login screen handles its own loading overlay
           <Stack.Screen
             name="Login"
             component={LoginScreen}
