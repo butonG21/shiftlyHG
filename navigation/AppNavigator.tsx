@@ -26,6 +26,7 @@ import HomeScreen from '../src/screens/HomeScreen';
 import ScheduleScreen from '../src/screens/ScheduleScreen';
 import AttendanceScreen from '../src/screens/AttendanceScreen';
 import AttendanceDetailScreen from '../src/screens/AttendanceDetailScreen';
+import { QRAttendanceScreen } from '../src/screens/QRAttendanceScreen';
 import { useAuth } from '../src/contexts/AuthContext';
 import { AttendanceRecord } from '../src/types/attendance';
 
@@ -45,6 +46,7 @@ export type RootStackParamList = {
   AttendanceDetail: {
     attendance: AttendanceRecord;
   };
+  QRAttendance: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -293,6 +295,14 @@ const AppNavigator: React.FC = () => {
               options={{
                 headerShown: false,
                 animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen 
+              name="QRAttendance" 
+              component={QRAttendanceScreen}
+              options={{
+                headerShown: false,
+                animation: 'slide_from_bottom',
               }}
             />
             <Stack.Screen

@@ -315,6 +315,15 @@ const HomeScreen: React.FC = () => {
       },
     },
     {
+      id: 'qr-attendance',
+      title: 'QR Attendance',
+      icon: 'qrcode-scan',
+      color: COLORS.accent.green,
+      onPress: () => {
+        navigation.navigate('QRAttendance' as never);
+      },
+    },
+    {
       id: 'profile',
       title: 'Edit Profile',
       icon: 'account-edit',
