@@ -73,7 +73,6 @@ export const getUserProfile = async (): Promise<User> => {
     
     console.log('Profile response received');
     console.log('Response status:', response.status);
-    console.log('Response data:', JSON.stringify(response.data, null, 2));
     
     const userData = extractApiData(response);
     
