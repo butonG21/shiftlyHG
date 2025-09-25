@@ -306,6 +306,15 @@ const HomeScreen: React.FC = () => {
   // Quick actions data
   const quickActions: QuickAction[] = [
     {
+      id: 'qr-attendance',
+      title: 'QR Attendance',
+      icon: 'qrcode-scan',
+      color: COLORS.status.success,
+      onPress: () => {
+        navigation.navigate('QRAttendance' as never);
+      },
+    },
+    {
       id: 'schedule',
       title: 'View Schedule',
       icon: 'calendar-month',
