@@ -44,3 +44,22 @@ android/app/release/
 android/app/debug/
 *.apk
 *.aab
+
+# Vim and editor directories
+$MYVIMDIR/
+.vim/
+.vimrc
+.nvim/
+.neovim/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary and cache directories
+tmp/
+temp/
+.cache/
