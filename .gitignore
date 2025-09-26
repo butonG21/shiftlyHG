@@ -35,3 +35,12 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Android specific ignores (keep android/ folder but ignore build artifacts)
+android/app/build/
+android/build/
+android/.gradle/
+android/app/release/
+android/app/debug/
+*.apk
+*.aab
