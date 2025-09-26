@@ -76,6 +76,10 @@ export const COLORS = {
     pearl: '#f1f5f9',         // Slate-100 - Pearl white
     frost: '#f8fafc',          // Slate-50 - Frost white
   },
+
+  // Additional properties for compatibility
+  border: '#e2e8f0',           // Slate-200 - Border color
+  surface: '#FFFFFF',          // White surface color
 } as const;
 
 // Opacity values for professional applications

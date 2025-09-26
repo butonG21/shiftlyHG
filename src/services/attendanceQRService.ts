@@ -6,7 +6,7 @@ import { STORAGE_KEYS } from '../constants/storage';
 
 // Constants
 const ATTENDANCE_API_BASE = 'http://attendance-api.shabuhachi.id/service';
-const DEVELOPMENT_MODE = __DEV__; // Use __DEV__ for React Native development mode
+const DEVELOPMENT_MODE = false; // Use __DEV__ for React Native development mode
 
 // Development dummy data
 const DUMMY_DATA = {
@@ -62,6 +62,30 @@ export interface AttendanceSubmissionRequest {
 export interface AttendanceSubmissionResponse {
   success: number;
   message: string;
+}
+
+export interface TripReportRequest {
+  userid: string;
+}
+
+export interface TripReportResponse {
+  success: boolean;
+  mset_date: string;
+  mset_date_breakout: string;
+  mset_date_breakin: string;
+  mset_date_clockout: string;
+  mset_start_time: string;
+  mset_start_address: string;
+  mset_start_image: string;
+  mset_break_out_time: string;
+  mset_break_out_address: string | null;
+  mset_break_out_image: string | null;
+  mset_break_in_time: string;
+  mset_break_in_address: string | null;
+  mset_break_in_image: string | null;
+  mset_end_time: string;
+  mset_end_address: string | null;
+  mset_end_image: string | null;
 }
 
 // Utility functions
@@ -345,6 +369,52 @@ export const submitAttendanceWithPhoto = async (
   }
 };
 
+// Get trip report data
+export const getTripReport = async (): Promise<TripReportResponse> => {
+  try {
+    logStep('Getting trip report data');
+    
+    const userid = await getCurrentUserId();
+    
+    const requestData: TripReportRequest = {
+      userid,
+    };
+
+    logStep('Sending trip report request', requestData);
+
+    const formData = new FormData();
+    formData.append('userid', userid);
+
+    const response = await axios.post<TripReportResponse>(
+      `${ATTENDANCE_API_BASE}/getTripReport1.php`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 15000,
+      }
+    );
+
+    logStep('Trip report response received', response.data);
+    
+    if (response.data.success) {
+      logStep('Trip report successful', {
+        date: response.data.mset_date,
+        start_time: response.data.mset_start_time,
+        start_address: response.data.mset_start_address,
+      });
+    } else {
+      logStep('Trip report failed');
+    }
+
+    return response.data;
+  } catch (error) {
+    logStep('Error in trip report', error);
+    throw error;
+  }
+};
+
 // Complete attendance flow
 export const completeAttendanceFlow = async (
   barcode: string,
@@ -406,5 +476,6 @@ export default {
   validateQRAndLocation,
   checkAttendanceStatus,
   submitAttendanceWithPhoto,
+  getTripReport,
   completeAttendanceFlow,
 };
