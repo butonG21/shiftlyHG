@@ -1,0 +1,42 @@
+# EAS Build ignore file
+# Learn more: https://docs.expo.dev/build-reference/easignore/
+
+# Vim and editor directories
+$MYVIMDIR/
+.vim/
+.vimrc
+.nvim/
+.neovim/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary and cache directories
+tmp/
+temp/
+.cache/
+
+# Development files
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build artifacts that shouldn't be included
+android/app/build/
+android/build/
+android/.gradle/
+ios/build/
