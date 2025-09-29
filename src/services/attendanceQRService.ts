@@ -6,7 +6,7 @@ import { STORAGE_KEYS } from '../constants/storage';
 
 // Constants
 const ATTENDANCE_API_BASE = 'http://attendance-api.shabuhachi.id/service';
-const DEVELOPMENT_MODE = false; // Use __DEV__ for React Native development mode
+const DEVELOPMENT_MODE = __DEV__; // Automatically detect development mode
 
 // Development dummy data
 const DUMMY_DATA = {
@@ -116,12 +116,20 @@ const getCurrentUserId = async (): Promise<string> => {
     const userProfile = await AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE);
     if (userProfile) {
       const user = JSON.parse(userProfile);
-      return user.uid || user._id || user.username;
+      const userId = user.uid || user._id || user.username;
+      if (userId) {
+        logStep('User ID retrieved successfully', userId);
+        return userId;
+      }
     }
-    throw new Error('User profile not found');
+    logStep('User profile not found in AsyncStorage');
+    throw new Error('User profile not found. Please login again.');
   } catch (error) {
     logStep('Error getting user ID', error);
-    throw error;
+    if (error instanceof Error) {
+      throw new Error(`Failed to get user ID: ${error.message}`);
+    }
+    throw new Error('Failed to get user ID: Unknown error');
   }
 };
 
@@ -392,26 +400,75 @@ export const getTripReport = async (): Promise<TripReportResponse> => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 15000,
+        timeout: 20000, // Increased timeout for production
+        validateStatus: (status) => status < 500, // Accept 4xx errors
       }
     );
 
     logStep('Trip report response received', response.data);
     
-    if (response.data.success) {
+    if (response.data && response.data.success) {
       logStep('Trip report successful', {
         date: response.data.mset_date,
         start_time: response.data.mset_start_time,
         start_address: response.data.mset_start_address,
       });
+      return response.data;
     } else {
-      logStep('Trip report failed');
+      logStep('Trip report failed or no data', response.data);
+      // Return empty/default data instead of throwing error
+      return {
+        success: false,
+        mset_date: '',
+        mset_date_breakout: '',
+        mset_date_breakin: '',
+        mset_date_clockout: '',
+        mset_start_time: '00:00:00',
+        mset_start_address: '',
+        mset_start_image: '',
+        mset_break_out_time: '00:00:00',
+        mset_break_out_address: null,
+        mset_break_out_image: null,
+        mset_break_in_time: '00:00:00',
+        mset_break_in_address: null,
+        mset_break_in_image: null,
+        mset_end_time: '00:00:00',
+        mset_end_address: null,
+        mset_end_image: null,
+      };
     }
-
-    return response.data;
   } catch (error) {
     logStep('Error in trip report', error);
-    throw error;
+    
+    // Return default data instead of throwing error to prevent UI crashes
+    if (axios.isAxiosError(error)) {
+      logStep('Network error in trip report', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+      });
+    }
+    
+    // Return empty data structure to maintain UI consistency
+    return {
+      success: false,
+      mset_date: '',
+      mset_date_breakout: '',
+      mset_date_breakin: '',
+      mset_date_clockout: '',
+      mset_start_time: '00:00:00',
+      mset_start_address: '',
+      mset_start_image: '',
+      mset_break_out_time: '00:00:00',
+      mset_break_out_address: null,
+      mset_break_out_image: null,
+      mset_break_in_time: '00:00:00',
+      mset_break_in_address: null,
+      mset_break_in_image: null,
+      mset_end_time: '00:00:00',
+      mset_end_address: null,
+      mset_end_image: null,
+    };
   }
 };
 

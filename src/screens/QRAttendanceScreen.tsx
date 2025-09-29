@@ -149,10 +149,39 @@ export const QRAttendanceScreen: React.FC<QRAttendanceScreenProps> = ({ navigati
       const tripData = await attendanceQRService.getTripReport();
       setTripReportData(tripData);
       console.log('[QR Attendance] Trip report loaded successfully:', tripData);
+      
+      // Only show error if we couldn't get any data at all
+      if (!tripData.success && tripData.mset_start_time === '00:00:00') {
+        console.warn('[QR Attendance] No attendance data available for today');
+        // Don't show error to user, just log it
+      }
     } catch (error) {
       console.error('[QR Attendance] Error loading trip report:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Gagal memuat data absensi';
-      showError(errorMessage);
+      // Set empty data instead of showing error to maintain UI consistency
+      setTripReportData({
+        success: false,
+        mset_date: '',
+        mset_date_breakout: '',
+        mset_date_breakin: '',
+        mset_date_clockout: '',
+        mset_start_time: '00:00:00',
+        mset_start_address: '',
+        mset_start_image: '',
+        mset_break_out_time: '00:00:00',
+        mset_break_out_address: null,
+        mset_break_out_image: null,
+        mset_break_in_time: '00:00:00',
+        mset_break_in_address: null,
+        mset_break_in_image: null,
+        mset_end_time: '00:00:00',
+        mset_end_address: null,
+        mset_end_image: null,
+      });
+      
+      // Only show error for critical failures, not for "no data" scenarios
+      if (error instanceof Error && error.message.includes('login')) {
+        showError('Silakan login ulang untuk memuat data absensi');
+      }
     } finally {
       setTripReportLoading(false);
     }
