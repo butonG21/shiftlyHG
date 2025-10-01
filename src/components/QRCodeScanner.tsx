@@ -1,10 +1,12 @@
 // src/components/QRCodeScanner.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Alert, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
 import { CameraView, Camera, BarcodeScanningResult } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { SPACING } from '../constants/spacing';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('screen');
 
 interface QRCodeScannerProps {
   onScanSuccess: (data: string) => void;
@@ -96,6 +98,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <CameraView
         style={styles.camera}
         facing="back"
@@ -151,11 +154,20 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
     backgroundColor: '#000000',
+    zIndex: 1000,
   },
   camera: {
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
   messageContainer: {
     flex: 1,
@@ -191,16 +203,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 50,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 50,
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.md,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    zIndex: 10,
   },
   closeButton: {
     padding: SPACING.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
   },
   headerTitle: {
     color: COLORS.text.white,
@@ -211,13 +230,17 @@ const styles = StyleSheet.create({
     width: 40,
   },
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },
   scanArea: {
-    width: 250,
-    height: 250,
+    width: Math.min(screenWidth * 0.7, 280),
+    height: Math.min(screenWidth * 0.7, 280),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -228,34 +251,38 @@ const styles = StyleSheet.create({
   },
   corner: {
     position: 'absolute',
-    width: 30,
-    height: 30,
+    width: 35,
+    height: 35,
     borderColor: COLORS.primary,
-    borderWidth: 3,
+    borderWidth: 4,
   },
   topLeft: {
     top: 0,
     left: 0,
     borderRightWidth: 0,
     borderBottomWidth: 0,
+    borderTopLeftRadius: 8,
   },
   topRight: {
     top: 0,
     right: 0,
     borderLeftWidth: 0,
     borderBottomWidth: 0,
+    borderTopRightRadius: 8,
   },
   bottomLeft: {
     bottom: 0,
     left: 0,
     borderRightWidth: 0,
     borderTopWidth: 0,
+    borderBottomLeftRadius: 8,
   },
   bottomRight: {
     bottom: 0,
     right: 0,
     borderLeftWidth: 0,
     borderTopWidth: 0,
+    borderBottomRightRadius: 8,
   },
   instructionsContainer: {
     position: 'absolute',
@@ -264,15 +291,18 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
+    paddingBottom: 20,
+    zIndex: 10,
   },
   instructionsText: {
     color: COLORS.text.white,
     fontSize: 16,
     textAlign: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
-    borderRadius: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   scannedContainer: {
     marginTop: SPACING.md,
@@ -283,16 +313,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
-    borderRadius: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   scanAgainButton: {
     backgroundColor: COLORS.primary,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
-    borderRadius: 8,
+    borderRadius: 12,
     marginTop: SPACING.sm,
   },
   scanAgainButtonText: {

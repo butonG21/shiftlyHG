@@ -1,10 +1,12 @@
 // src/components/SelfieCamera.tsx
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, Dimensions, StatusBar } from 'react-native';
 import { CameraView, Camera } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { SPACING } from '../constants/spacing';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('screen');
 
 interface SelfieCameraProps {
   onPhotoTaken: (imageUri: string) => void;
@@ -159,6 +161,7 @@ export const SelfieCamera: React.FC<SelfieCameraProps> = ({
   // Camera view
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <CameraView
         ref={cameraRef}
         style={styles.camera}
@@ -217,11 +220,20 @@ export const SelfieCamera: React.FC<SelfieCameraProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
     backgroundColor: '#000000',
+    zIndex: 1000,
   },
   camera: {
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
   messageContainer: {
     flex: 1,
@@ -257,16 +269,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 50,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 50,
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.md,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    zIndex: 10,
   },
   closeButton: {
     padding: SPACING.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
   },
   headerTitle: {
     color: COLORS.text.white,
@@ -277,13 +296,17 @@ const styles = StyleSheet.create({
     width: 40,
   },
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },
   faceGuide: {
-    width: 200,
-    height: 250,
+    width: Math.min(screenWidth * 0.6, 240),
+    height: Math.min(screenWidth * 0.75, 300),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -332,11 +355,12 @@ const styles = StyleSheet.create({
   },
   statusContainer: {
     position: 'absolute',
-    top: 120,
+    top: StatusBar.currentHeight ? StatusBar.currentHeight + 80 : 120,
     left: 0,
     right: 0,
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
+    zIndex: 10,
   },
   statusText: {
     color: COLORS.primary,
@@ -360,15 +384,17 @@ const styles = StyleSheet.create({
   },
   captureContainer: {
     position: 'absolute',
-    bottom: 50,
+    bottom: 60,
     left: 0,
     right: 0,
     alignItems: 'center',
+    zIndex: 10,
+    paddingBottom: 20,
   },
   captureButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -379,9 +405,9 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   captureButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',

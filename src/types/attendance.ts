@@ -17,6 +17,10 @@ export interface AttendanceRecord {
   break_out_image: string;
   createdAt: string;
   updatedAt: string;
+  // Additional properties for display formatting
+  type?: string;
+  time?: string;
+  location?: string;
 }
 
 export interface AttendanceResponse {
@@ -30,4 +34,16 @@ export interface AttendanceFilter {
   date: string | number; // Can be string or number for day of month
   month: number;
   year: number;
+}
+
+export interface WeeklyAttendanceResponse {
+  success: boolean;
+  message: string;
+  data: AttendanceRecord[];
+  timestamp: string;
+}
+
+export interface DateRange {
+  startDate: string; // YYYY-MM-DD format
+  endDate: string;   // YYYY-MM-DD format
 }

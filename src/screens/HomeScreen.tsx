@@ -316,7 +316,7 @@ const HomeScreen: React.FC = () => {
     },
     {
       id: 'schedule',
-      title: 'View Schedule',
+      title: 'Schedule',
       icon: 'calendar-month',
       color: COLORS.primary,
       onPress: () => {
@@ -325,7 +325,7 @@ const HomeScreen: React.FC = () => {
     },
     {
       id: 'profile',
-      title: 'Edit Profile',
+      title: 'Profile',
       icon: 'account-edit',
       color: COLORS.secondary,
       onPress: () => {
@@ -352,7 +352,7 @@ const HomeScreen: React.FC = () => {
     },
     {
       id: 'attendance',
-      title: 'Attendance',
+      title: 'Attendance Record',
       icon: 'calendar-check',
       color: COLORS.accent.blue,
       onPress: () => {
