@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
 import { ATTENDANCE_TYPES } from '../../constants/attendance';
+import AttendanceDetailModal from './AttendanceDetailModal';
 
 // Import the TripReportResponse type from service
 import { TripReportResponse } from '../../services/attendanceQRService';
@@ -38,6 +39,15 @@ interface TodayAttendanceProps {
   showError: (message: string) => void;
 }
 
+// Interface untuk modal data
+interface ModalData {
+  type: string;
+  time: string;
+  address: string;
+  image: string;
+  date: string;
+}
+
 const TodayAttendance: React.FC<TodayAttendanceProps> = ({
   currentStep,
   isLoading,
@@ -51,6 +61,22 @@ const TodayAttendance: React.FC<TodayAttendanceProps> = ({
   navigation,
   showError,
 }) => {
+  // State untuk modal
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedModalData, setSelectedModalData] = useState<ModalData | null>(null);
+
+  // Function untuk membuka modal dengan data yang dipilih
+  const openModal = (modalData: ModalData) => {
+    setSelectedModalData(modalData);
+    setModalVisible(true);
+  };
+
+  // Function untuk menutup modal
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedModalData(null);
+  };
+
   const renderCurrentStatusCard = () => {
     if (!tripReportData) return null;
     
@@ -95,42 +121,77 @@ const TodayAttendance: React.FC<TodayAttendanceProps> = ({
     date: string,
     icon: string,
     color: string,
-    defaultText: string
-  ) => (
-    <View style={styles.attendanceCard}>
-      <View style={styles.attendanceCardHeader}>
-        <View style={[styles.attendanceCardIcon, { backgroundColor: color }]}>
-          <Ionicons name={icon as any} size={24} color="#FFFFFF" />
-        </View>
-        <View style={styles.attendanceCardInfo}>
-          <Text style={styles.attendanceCardTitle}>{title}</Text>
-          <Text style={styles.attendanceCardTime}>
-            {time !== '00:00:00' ? time : defaultText}
-          </Text>
-        </View>
-        <View style={styles.attendanceCardStatus}>
-          {time !== '00:00:00' ? (
-            <Ionicons name="checkmark-circle" size={20} color={COLORS.status.success} />
-          ) : (
-            <Ionicons name="time-outline" size={20} color={COLORS.text.secondary} />
+    defaultText: string,
+    imageUrl?: string
+  ) => {
+    // Hanya buat card touchable jika ada data waktu (sudah absen)
+    const hasData = time !== '00:00:00';
+    
+    const cardContent = (
+      <View style={styles.attendanceCard}>
+        <View style={styles.attendanceCardHeader}>
+          <View style={[styles.attendanceCardIcon, { backgroundColor: color }]}>
+            <Ionicons name={icon as any} size={24} color="#FFFFFF" />
+          </View>
+          <View style={styles.attendanceCardInfo}>
+            <Text style={styles.attendanceCardTitle}>{title}</Text>
+            <Text style={styles.attendanceCardTime}>
+              {hasData ? time : defaultText}
+            </Text>
+          </View>
+          <View style={styles.attendanceCardStatus}>
+            {hasData ? (
+              <Ionicons name="checkmark-circle" size={20} color={COLORS.status.success} />
+            ) : (
+              <Ionicons name="time-outline" size={20} color={COLORS.text.secondary} />
+            )}
+          </View>
+          {hasData && (
+            <View style={styles.attendanceCardAction}>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.text.secondary} />
+            </View>
           )}
         </View>
-      </View>
-      {address && (
-        <View style={styles.attendanceCardLocation}>
-          <Ionicons name="location-outline" size={16} color={COLORS.text.secondary} />
-          <Text style={styles.attendanceCardLocationText} numberOfLines={2}>
-            {address}
+        {address && (
+          <View style={styles.attendanceCardLocation}>
+            <Ionicons name="location-outline" size={16} color={COLORS.text.secondary} />
+            <Text style={styles.attendanceCardLocationText} numberOfLines={2}>
+              {address}
+            </Text>
+          </View>
+        )}
+        <View style={styles.attendanceCardDate}>
+          <Text style={styles.attendanceCardDateText}>
+            {date || 'Tanggal tidak tersedia'}
           </Text>
         </View>
-      )}
-      <View style={styles.attendanceCardDate}>
-        <Text style={styles.attendanceCardDateText}>
-          {date || 'Tanggal tidak tersedia'}
-        </Text>
       </View>
-    </View>
-  );
+    );
+
+    // Jika ada data, buat card touchable
+    if (hasData) {
+      return (
+        <TouchableOpacity
+          onPress={() => {
+            const modalData: ModalData = {
+              type: title,
+              time: time,
+              address: address || 'Lokasi tidak tersedia',
+              image: imageUrl || '',
+              date: date || 'Tanggal tidak tersedia'
+            };
+            openModal(modalData);
+          }}
+          activeOpacity={0.7}
+        >
+          {cardContent}
+        </TouchableOpacity>
+      );
+    }
+
+    // Jika tidak ada data, return card biasa
+    return cardContent;
+  };
 
   const renderLocationCard = () => {
     if (!tripReportData?.mset_start_address) return null;
@@ -187,8 +248,6 @@ const TodayAttendance: React.FC<TodayAttendanceProps> = ({
       {/* Current Status Card */}
       {renderCurrentStatusCard()}
 
-
-
       {/* Attendance Cards */}
       {tripReportData && (
         <View style={styles.attendanceCardsContainer}>
@@ -202,7 +261,8 @@ const TodayAttendance: React.FC<TodayAttendanceProps> = ({
             tripReportData.mset_date,
             'log-in-outline',
             ATTENDANCE_TYPES.MASUK.color,
-            'Belum absen'
+            'Belum absen',
+            tripReportData.mset_start_image
           )}
 
           {/* Break-out Card */}
@@ -213,7 +273,8 @@ const TodayAttendance: React.FC<TodayAttendanceProps> = ({
             tripReportData.mset_date_breakout || tripReportData.mset_date,
             'exit-outline',
             ATTENDANCE_TYPES.IZIN.color,
-            'Belum istirahat'
+            'Belum istirahat',
+            tripReportData.mset_break_out_image || ''
           )}
 
           {/* Break-in Card */}
@@ -224,7 +285,8 @@ const TodayAttendance: React.FC<TodayAttendanceProps> = ({
             tripReportData.mset_date_breakin || tripReportData.mset_date,
             'enter-outline',
             ATTENDANCE_TYPES.MASUK.color,
-            'Belum kembali'
+            'Belum kembali',
+            tripReportData.mset_break_in_image || ''
           )}
 
           {/* Clock-out Card */}
@@ -235,13 +297,27 @@ const TodayAttendance: React.FC<TodayAttendanceProps> = ({
             tripReportData.mset_date_clockout || tripReportData.mset_date,
             'log-out-outline',
             ATTENDANCE_TYPES.PULANG.color,
-            'Belum pulang'
+            'Belum pulang',
+            tripReportData.mset_end_image || ''
           )}
         </View>
       )}
 
       {/* Location Display */}
       {renderLocationCard()}
+
+      {/* Attendance Detail Modal */}
+      {selectedModalData && (
+        <AttendanceDetailModal
+          visible={modalVisible}
+          onClose={closeModal}
+          type={selectedModalData.type}
+          time={selectedModalData.time}
+          address={selectedModalData.address}
+          image={selectedModalData.image}
+          date={selectedModalData.date}
+        />
+      )}
     </ScrollView>
   );
 };
@@ -267,6 +343,7 @@ const styles = {
     padding: 20,
     marginHorizontal: 16,
     marginBottom: 16,
+    marginTop: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -372,6 +449,11 @@ const styles = {
   },
   attendanceCardStatus: {
     marginLeft: 8,
+  },
+  attendanceCardAction: {
+    marginLeft: 8,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   attendanceCardLocation: {
     flexDirection: 'row' as const,

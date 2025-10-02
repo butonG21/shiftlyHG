@@ -189,7 +189,7 @@ export const getScheduleByDateRange = async (employeeId: string, startDate: stri
   try {
     console.log('Fetching schedule by date range:', { employeeId, startDate, endDate });
     
-    const response = await apiClient.get<ApiResponse<EmployeeSchedule>>(`/schedule/${employeeId}/date-range?start=${startDate}&end=${endDate}`);
+    const response = await apiClient.get<ApiResponse<EmployeeSchedule>>(`/schedule/${employeeId}/date-range?start_date=${startDate}&end_date=${endDate}`);
     const schedule = extractApiData(response);
     
     console.log('Schedule by date range fetched successfully');

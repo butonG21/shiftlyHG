@@ -40,7 +40,7 @@ export type RootStackParamList = {
   ShiftSwap: undefined;
   History: undefined;
   Notifications: undefined;
-  Attendance: undefined;
+  Attendance: { selectedDate?: string } | undefined;
   QRAttendance: undefined;
 };
 

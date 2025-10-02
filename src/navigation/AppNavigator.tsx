@@ -4,7 +4,7 @@ import AttendanceScreen from '../screens/AttendanceScreen';
 
 export type RootStackParamList = {
   Home: undefined;
-  Attendance: undefined;
+  Attendance: { selectedDate?: string };
   Schedule: undefined;
   // ...add other screens as needed
 };
