@@ -29,13 +29,17 @@ import TimeDisplay from '../components/TimeDisplay';
 
 // Services
 import attendanceQRService, { TripReportResponse } from '../services/attendanceQRService';
+import { fetchUserAttendance } from '../services/attendanceService';
+import apiClient from '../services/api';
 
 // Hooks
 import useAttendance from '../hooks/useAttendance';
 import { useSnackbar } from '../components/Snackbar';
+import { useAuth } from '../contexts/AuthContext';
 
 // Types
-import { AttendanceRecord } from '../types/attendance';
+import { AttendanceRecord, AttendanceResponse } from '../types/attendance';
+import { ApiResponse } from '../types/api';
 
 interface QRAttendanceScreenProps {
   navigation: any;
@@ -92,6 +96,7 @@ const calculateDuration = (startTime: string, endTime?: string): string => {
 
 export const QRAttendanceScreen: React.FC<QRAttendanceScreenProps> = ({ navigation }) => {
   const layout = useWindowDimensions();
+  const { user } = useAuth(); // Mendapatkan user dari AuthContext
   const [currentStep, setCurrentStep] = useState<AttendanceStep>('initial');
   const [isLoading, setIsLoading] = useState(false);
   const [scannedQRCode, setScannedQRCode] = useState<string>('');
@@ -123,9 +128,9 @@ export const QRAttendanceScreen: React.FC<QRAttendanceScreenProps> = ({ navigati
     loadWeeklyAttendance,
   } = useAttendance();
 
-  // Load trip report data on component mount
+  // Load trip report data on component mount with retry mechanism
   useEffect(() => {
-    loadTripReport();
+    loadTripReport(3); // Retry up to 3 times
   }, []);
 
   // Load weekly attendance data
@@ -133,23 +138,53 @@ export const QRAttendanceScreen: React.FC<QRAttendanceScreenProps> = ({ navigati
     loadWeeklyAttendance();
   }, [loadWeeklyAttendance]);
 
-  const loadTripReport = async () => {
+  // Add a delay function for retry mechanism
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const loadTripReport = async (retryCount = 3, retryDelay = 1000) => {
     setTripReportLoading(true);
-    try {
-      const response = await attendanceQRService.getTripReport();
-      if (response.success) {
-        setTripReportData(response);
-      } else {
-        console.log('[QR Attendance] No trip report data available');
+    let attempts = 0;
+    
+    while (attempts < retryCount) {
+      try {
+        console.log(`[QR Attendance] Loading trip report, attempt ${attempts + 1} of ${retryCount}`);
+        const response = await attendanceQRService.getTripReport();
+        
+        if (response && response.success) {
+          console.log('[QR Attendance] Trip report loaded successfully:', response);
+          setTripReportData(response);
+          setTripReportLoading(false);
+          return; // Success, exit the function
+        } else {
+          console.log('[QR Attendance] No trip report data available, response:', response);
+          // If we're on the last attempt, show a message to the user
+          if (attempts === retryCount - 1) {
+            showInfo('Data absensi hari ini belum tersedia');
+          }
+        }
+      } catch (error) {
+        console.error(`[QR Attendance] Error loading trip report (attempt ${attempts + 1}):`, error);
+        
+        // If we're on the last attempt, show an error message
+        if (attempts === retryCount - 1) {
+          if (error instanceof Error && error.message.includes('401')) {
+            showError('Silakan login ulang untuk memuat data absensi');
+          } else {
+            showError('Gagal memuat data absensi, silakan coba lagi nanti');
+          }
+        }
       }
-    } catch (error) {
-      console.error('[QR Attendance] Error loading trip report:', error);
-      if (error instanceof Error && error.message.includes('401')) {
-        showError('Silakan login ulang untuk memuat data absensi');
+      
+      attempts++;
+      if (attempts < retryCount) {
+        console.log(`[QR Attendance] Retrying in ${retryDelay}ms...`);
+        await delay(retryDelay);
+        // Increase delay for next retry (exponential backoff)
+        retryDelay *= 2;
       }
-    } finally {
-      setTripReportLoading(false);
     }
+    
+    setTripReportLoading(false);
   };
 
   // Helper function to calculate work duration
@@ -299,8 +334,19 @@ export const QRAttendanceScreen: React.FC<QRAttendanceScreenProps> = ({ navigati
       showSuccess('Absensi berhasil disimpan!');
 
       // Reload trip report to get updated data
-      setTimeout(() => {
+      setTimeout(async () => {
         loadTripReport();
+        
+        // Juga panggil endpoint attendance/fetch/{userId} untuk memperbarui data attendance record
+        try {
+          if (user?.uid) {
+            console.log('[QR Attendance] Fetching updated attendance data for user:', user.uid);
+            // Panggil first API call dari fetchUserAttendance
+            await apiClient.get<ApiResponse<AttendanceResponse>>(`/attendance/fetch/${user.uid}`);
+          }
+        } catch (error) {
+          console.error('[QR Attendance] Error fetching updated attendance data:', error);
+        }
       }, 1000);
 
     } catch (error) {
