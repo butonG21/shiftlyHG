@@ -78,10 +78,12 @@ const TodayAttendance: React.FC<TodayAttendanceProps> = ({
   };
 
   const renderCurrentStatusCard = () => {
-    if (!tripReportData) return null;
-    
-    const currentStatus = getCurrentStatus();
-    if (!currentStatus) return null;
+    const currentStatus = getCurrentStatus() || {
+      status: 'MASUK',
+      label: 'Belum Absen',
+      time: '-',
+      duration: '00:00'
+    };
 
     const attendanceType = ATTENDANCE_TYPES[currentStatus.status as keyof typeof ATTENDANCE_TYPES] || ATTENDANCE_TYPES.MASUK;
     
@@ -194,7 +196,8 @@ const TodayAttendance: React.FC<TodayAttendanceProps> = ({
   };
 
   const renderLocationCard = () => {
-    if (!tripReportData?.mset_start_address) return null;
+    const address = tripReportData?.mset_start_address || 'Lokasi tidak tersedia';
+    const hasValidAddress = tripReportData?.mset_start_address && tripReportData.mset_start_address !== 'Lokasi tidak tersedia';
 
     return (
       <View style={styles.locationContainer}>
@@ -208,27 +211,29 @@ const TodayAttendance: React.FC<TodayAttendanceProps> = ({
             <View style={styles.locationInfo}>
               <Text style={styles.locationLabel}>Alamat Lengkap</Text>
               <Text style={styles.locationAddress} numberOfLines={3}>
-                {tripReportData.mset_start_address}
+                {address}
               </Text>
             </View>
           </View>
           
-          <View style={styles.locationActions}>
-            <TouchableOpacity 
-              style={styles.mapButton}
-              onPress={() => {
-                const address = encodeURIComponent(tripReportData.mset_start_address);
-                const url = `https://www.google.com/maps/search/?api=1&query=${address}`;
-                Linking.openURL(url).catch(err => {
-                  console.error('Error opening maps:', err);
-                  showError('Tidak dapat membuka aplikasi peta');
-                });
-              }}
-            >
-              <Ionicons name="map-outline" size={16} color={COLORS.primary} />
-              <Text style={styles.mapButtonText}>Lihat di Peta</Text>
-            </TouchableOpacity>
-          </View>
+          {hasValidAddress && (
+            <View style={styles.locationActions}>
+              <TouchableOpacity 
+                style={styles.mapButton}
+                onPress={() => {
+                  const encodedAddress = encodeURIComponent(address);
+                  const url = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                  Linking.openURL(url).catch(err => {
+                    console.error('Error opening maps:', err);
+                    showError('Tidak dapat membuka aplikasi peta');
+                  });
+                }}
+              >
+                <Ionicons name="map-outline" size={16} color={COLORS.primary} />
+                <Text style={styles.mapButtonText}>Lihat di Peta</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
     );
@@ -249,59 +254,57 @@ const TodayAttendance: React.FC<TodayAttendanceProps> = ({
       {renderCurrentStatusCard()}
 
       {/* Attendance Cards */}
-      {tripReportData && (
-        <View style={styles.attendanceCardsContainer}>
-          <Text style={styles.attendanceCardsTitle}>Data Absensi Hari Ini</Text>
-          
-          {/* Clock-in Card */}
-          {renderAttendanceCard(
-            'Clock In',
-            tripReportData.mset_start_time,
-            tripReportData.mset_start_address,
-            tripReportData.mset_date,
-            'log-in-outline',
-            ATTENDANCE_TYPES.MASUK.color,
-            'Belum absen',
-            tripReportData.mset_start_image
-          )}
+      <View style={styles.attendanceCardsContainer}>
+        <Text style={styles.attendanceCardsTitle}>Data Absensi Hari Ini</Text>
+        
+        {/* Clock-in Card */}
+        {renderAttendanceCard(
+          'Clock In',
+          tripReportData?.mset_start_time || '00:00:00',
+          tripReportData?.mset_start_address || 'Lokasi tidak tersedia',
+          tripReportData?.mset_date || 'Tanggal tidak tersedia',
+          'log-in-outline',
+          ATTENDANCE_TYPES.MASUK.color,
+          'Belum absen',
+          tripReportData?.mset_start_image || ''
+        )}
 
-          {/* Break-out Card */}
-          {renderAttendanceCard(
-            'Break Out',
-            tripReportData.mset_break_out_time,
-            tripReportData.mset_break_out_address || 'Lokasi tidak tersedia',
-            tripReportData.mset_date_breakout || tripReportData.mset_date,
-            'exit-outline',
-            ATTENDANCE_TYPES.IZIN.color,
-            'Belum istirahat',
-            tripReportData.mset_break_out_image || ''
-          )}
+        {/* Break-out Card */}
+        {renderAttendanceCard(
+          'Break Out',
+          tripReportData?.mset_break_out_time || '00:00:00',
+          tripReportData?.mset_break_out_address || 'Lokasi tidak tersedia',
+          tripReportData?.mset_date_breakout || tripReportData?.mset_date || 'Tanggal tidak tersedia',
+          'exit-outline',
+          ATTENDANCE_TYPES.IZIN.color,
+          'Belum istirahat',
+          tripReportData?.mset_break_out_image || ''
+        )}
 
-          {/* Break-in Card */}
-          {renderAttendanceCard(
-            'Break In',
-            tripReportData.mset_break_in_time,
-            tripReportData.mset_break_in_address || 'Lokasi tidak tersedia',
-            tripReportData.mset_date_breakin || tripReportData.mset_date,
-            'enter-outline',
-            ATTENDANCE_TYPES.MASUK.color,
-            'Belum kembali',
-            tripReportData.mset_break_in_image || ''
-          )}
+        {/* Break-in Card */}
+        {renderAttendanceCard(
+          'Break In',
+          tripReportData?.mset_break_in_time || '00:00:00',
+          tripReportData?.mset_break_in_address || 'Lokasi tidak tersedia',
+          tripReportData?.mset_date_breakin || tripReportData?.mset_date || 'Tanggal tidak tersedia',
+          'enter-outline',
+          ATTENDANCE_TYPES.MASUK.color,
+          'Belum kembali',
+          tripReportData?.mset_break_in_image || ''
+        )}
 
-          {/* Clock-out Card */}
-          {renderAttendanceCard(
-            'Clock Out',
-            tripReportData.mset_end_time,
-            tripReportData.mset_end_address || 'Lokasi tidak tersedia',
-            tripReportData.mset_date_clockout || tripReportData.mset_date,
-            'log-out-outline',
-            ATTENDANCE_TYPES.PULANG.color,
-            'Belum pulang',
-            tripReportData.mset_end_image || ''
-          )}
-        </View>
-      )}
+        {/* Clock-out Card */}
+        {renderAttendanceCard(
+          'Clock Out',
+          tripReportData?.mset_end_time || '00:00:00',
+          tripReportData?.mset_end_address || 'Lokasi tidak tersedia',
+          tripReportData?.mset_date_clockout || tripReportData?.mset_date || 'Tanggal tidak tersedia',
+          'log-out-outline',
+          ATTENDANCE_TYPES.PULANG.color,
+          'Belum pulang',
+          tripReportData?.mset_end_image || ''
+        )}
+      </View>
 
       {/* Location Display */}
       {renderLocationCard()}
