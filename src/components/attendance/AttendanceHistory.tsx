@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, memo } from 'react';
+import React, { useRef, memo } from 'react';
 import {
   View,
   Text,
@@ -7,84 +7,71 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
 import { COLORS } from '../../constants/colors';
-import { ATTENDANCE_TYPES } from '../../constants/attendance';
-
-interface AttendanceItem {
-  id: string;
-  date: string;
-  time: string;
-  endTime: string;
-  duration: string;
-  location: string;
-  category: string;
-  verified: boolean;
-}
-
-interface WeeklyAttendanceData {
-  data: any[];
-}
+import useAttendanceScheduleCheck from '../../hooks/useAttendanceScheduleCheck';
+import type { RootStackParamList } from '../../navigation/AppNavigator';
+import { 
+  getStatusColor, 
+  getStatusIcon, 
+  getStatusLabel,
+  AttendanceStatus 
+} from '../../utils/attendanceScheduleUtils';
 
 interface AttendanceHistoryProps {
-  weeklyAttendance: WeeklyAttendanceData | null;
-  weeklyAttendanceLoading: boolean;
-  weeklyAttendanceError: string | null;
-  loadWeeklyAttendance: () => void;
+  // Keeping original props for backward compatibility but not using them
+  weeklyAttendance?: any;
+  weeklyAttendanceLoading?: boolean;
+  weeklyAttendanceError?: string | null;
+  loadWeeklyAttendance?: () => void;
 }
 
-const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({
-  weeklyAttendance,
-  weeklyAttendanceLoading,
-  weeklyAttendanceError,
-  loadWeeklyAttendance,
-}) => {
+const AttendanceHistory: React.FC<AttendanceHistoryProps> = () => {
   const scrollViewRef = useRef<ScrollView>(null);
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   
-  // Helper function to format attendance data for display
-  const formatAttendanceForDisplay = (data: any[]) => {
-    console.log('Raw attendance data:', data);
-    
-    return data.map((record: any, index: number) => {
-      // Extract time from start_time (format: "HH:MM:SS" or "HH:MM")
-      const startTime = record.start_time ? record.start_time.substring(0, 5) : '00:00';
-      const endTime = record.end_time ? record.end_time.substring(0, 5) : '-';
-      
-      // Calculate duration
-      let duration = '-';
-      if (record.start_time && record.end_time) {
-        const start = new Date(`2000-01-01T${record.start_time}`);
-        const end = new Date(`2000-01-01T${record.end_time}`);
-        const diffMs = end.getTime() - start.getTime();
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        duration = `${diffHours}j ${diffMinutes}m`;
-      }
-      
-      const formatted = {
-        ...record,
-        id: record._id || record.userid + '_' + record.date + '_' + index,
-        category: record.start_time ? 'MASUK' : 'KELUAR',
-        time: startTime,
-        endTime: endTime,
-        duration: duration,
-        location: record.start_address || record.end_address || 'Lokasi tidak tersedia',
-        verified: true, // Assume verified for now
-        date: record.date
-      };
-      
-      return formatted;
-    });
+  // Use the new hook for cross-checking attendance with schedule
+  const {
+    attendanceStatuses,
+    statistics,
+    loading,
+    error,
+    refetch,
+  } = useAttendanceScheduleCheck();
+
+  const handleAttendanceCardPress = (date: string) => {
+    navigation.navigate('Attendance', { selectedDate: date });
   };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    };
+    return date.toLocaleDateString('id-ID', options);
+  };
+
+  const formatTime = (timeString: string): string => {
+    if (!timeString || timeString === '00:00:00' || timeString === '00:00') {
+      return '--:--';
+    }
+    return timeString.substring(0, 5);
+  };
+
   const renderEmptyState = () => (
     <View style={styles.emptyStateContainer}>
       <Ionicons name="calendar-outline" size={48} color={COLORS.text.secondary} />
-      <Text style={styles.emptyStateTitle}>Belum Ada Data Absensi</Text>
+      <Text style={styles.emptyStateTitle}>Belum Ada Data</Text>
       <Text style={styles.emptyStateText}>
-        Data absensi untuk 7 hari terakhir belum tersedia
+        Data absensi dan jadwal untuk 7 hari terakhir belum tersedia
       </Text>
       <TouchableOpacity 
         style={styles.refreshButton}
-        onPress={loadWeeklyAttendance}
+        onPress={refetch}
       >
         <Ionicons name="refresh" size={16} color={COLORS.primary} />
         <Text style={styles.refreshButtonText}>Muat Ulang</Text>
@@ -95,10 +82,10 @@ const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({
   const renderErrorState = () => (
     <View style={styles.errorContainer}>
       <Ionicons name="alert-circle-outline" size={24} color={COLORS.status.error} />
-      <Text style={styles.errorText}>Gagal memuat riwayat absensi</Text>
+      <Text style={styles.errorText}>Gagal memuat data absensi dan jadwal</Text>
       <TouchableOpacity 
         style={styles.retryButton}
-        onPress={loadWeeklyAttendance}
+        onPress={refetch}
       >
         <Text style={styles.retryButtonText}>Coba Lagi</Text>
       </TouchableOpacity>
@@ -107,86 +94,136 @@ const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({
 
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
-      <ActivityIndicator size="small" color={COLORS.primary} />
-      <Text style={styles.loadingText}>Memuat riwayat absensi...</Text>
+      <ActivityIndicator size="large" color={COLORS.primary} />
+      <Text style={styles.loadingText}>Memuat data absensi dan jadwal...</Text>
     </View>
   );
 
-  const renderHistoryCard = (item: AttendanceItem) => {
-    const attendanceType = ATTENDANCE_TYPES[item.category as keyof typeof ATTENDANCE_TYPES] || ATTENDANCE_TYPES.MASUK;
-    
+  const renderStatistics = () => {
+    if (attendanceStatuses.length === 0) return null;
+
     return (
-      <View style={styles.historyCard}>
-        <View style={styles.historyHeader}>
-          <View style={styles.historyDateContainer}>
-            <Text style={styles.historyDate}>
-              {new Date(item.date).toLocaleDateString('id-ID', {
-                weekday: 'short',
-                day: '2-digit',
-                month: 'short'
-              })}
-            </Text>
-            <Text style={styles.historyTime}>{item.time}</Text>
-          </View>
-          
-          <View style={styles.historyStatusContainer}>
-            <View style={[styles.historyStatusBadge, { backgroundColor: attendanceType.color }]}>
-              <Ionicons name={attendanceType.icon as any} size={16} color="#FFFFFF" />
-              <Text style={styles.historyStatusText}>{item.category}</Text>
+      <View style={styles.statisticsContainer}>
+        <Text style={styles.statisticsTitle}>Ringkasan 7 Hari Terakhir</Text>
+        <View style={styles.statisticsGrid}>
+          <View style={styles.statItem}>
+            <View style={[styles.statIcon, { backgroundColor: getStatusColor('present') }]}>
+              <Ionicons name="checkmark" size={16} color="#FFFFFF" />
             </View>
-            
-            {item.verified ? (
-              <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                <Text style={styles.verifiedText}>Terverifikasi</Text>
-              </View>
-            ) : (
-              <View style={styles.unverifiedBadge}>
-                <Ionicons name="alert-circle" size={16} color="#FF9800" />
-                <Text style={styles.unverifiedText}>Belum Verifikasi</Text>
-              </View>
-            )}
-          </View>
-        </View>
-        
-        <View style={styles.historyDetails}>
-          <View style={styles.historyDetailItem}>
-            <Text style={styles.historyDetailLabel}>Durasi</Text>
-            <Text style={styles.historyDetailValue}>{item.duration}</Text>
+            <Text style={styles.statValue}>{statistics.present}</Text>
+            <Text style={styles.statLabel}>Hadir</Text>
           </View>
           
-          {item.endTime !== '-' && (
-            <View style={styles.historyDetailItem}>
-              <Text style={styles.historyDetailLabel}>Selesai</Text>
-              <Text style={styles.historyDetailValue}>{item.endTime}</Text>
+          <View style={styles.statItem}>
+            <View style={[styles.statIcon, { backgroundColor: getStatusColor('absent') }]}>
+              <Ionicons name="close" size={16} color="#FFFFFF" />
             </View>
-          )}
+            <Text style={styles.statValue}>{statistics.absent}</Text>
+            <Text style={styles.statLabel}>Tidak Hadir</Text>
+          </View>
           
-          <View style={styles.historyDetailItem}>
-            <Text style={styles.historyDetailLabel}>Lokasi</Text>
-            <Text style={styles.historyDetailValue} numberOfLines={1}>{item.location}</Text>
+          <View style={styles.statItem}>
+            <View style={[styles.statIcon, { backgroundColor: getStatusColor('off') }]}>
+              <Ionicons name="calendar" size={16} color="#FFFFFF" />
+            </View>
+            <Text style={styles.statValue}>{statistics.off}</Text>
+            <Text style={styles.statLabel}>Libur</Text>
+          </View>
+          
+          <View style={styles.statItem}>
+            <View style={[styles.statIcon, { backgroundColor: getStatusColor('unknown') }]}>
+              <Ionicons name="help" size={16} color="#FFFFFF" />
+            </View>
+            <Text style={styles.statValue}>{statistics.unknown}</Text>
+            <Text style={styles.statLabel}>Tidak Diketahui</Text>
           </View>
         </View>
       </View>
     );
   };
 
-  const formattedData = useMemo(() => {
-    if (!weeklyAttendance?.data || weeklyAttendance.data.length === 0) {
-      return [];
-    }
+  const renderAttendanceCard = (status: AttendanceStatus) => {
+    const statusColor = getStatusColor(status.status);
+    const statusIcon = getStatusIcon(status.status);
+    const statusLabel = getStatusLabel(status.status);
     
-    const formatted = formatAttendanceForDisplay(weeklyAttendance.data);
-    return formatted;
-  }, [weeklyAttendance?.data]);
+    const startTime = status.attendanceData?.start_time ? formatTime(status.attendanceData.start_time) : '--:--';
+    const endTime = status.attendanceData?.end_time ? formatTime(status.attendanceData.end_time) : '--:--';
+    
+    // Calculate duration
+    let duration = '--:--';
+    if (status.attendanceData?.start_time && status.attendanceData?.end_time && 
+        status.attendanceData.start_time !== '00:00:00' && status.attendanceData.end_time !== '00:00:00') {
+      const start = new Date(`2000-01-01T${status.attendanceData.start_time}`);
+      const end = new Date(`2000-01-01T${status.attendanceData.end_time}`);
+      const diffMs = end.getTime() - start.getTime();
+      if (diffMs > 0) {
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        duration = `${diffHours}j ${diffMinutes}m`;
+      }
+    }
+
+    return (
+      <TouchableOpacity 
+        key={status.date} 
+        style={styles.historyCard}
+        onPress={() => handleAttendanceCardPress(status.date)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.historyHeader}>
+          <View style={styles.historyDateContainer}>
+            <Text style={styles.historyDate}>{formatDate(status.date)}</Text>
+            <Text style={styles.historyTime}>
+              {status.scheduleData ? `Jadwal: ${status.scheduleData.shift}` : 'Tidak ada jadwal'}
+            </Text>
+          </View>
+          <View style={styles.historyStatusContainer}>
+            <View style={[styles.historyStatusBadge, { backgroundColor: statusColor }]}>
+              <Ionicons name={statusIcon as any} size={12} color="#FFFFFF" />
+              <Text style={styles.historyStatusText}>{statusLabel}</Text>
+            </View>
+            {status.reason && (
+              <Text style={styles.reasonText}>{status.reason}</Text>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.historyDetails}>
+          <View style={styles.historyDetailItem}>
+            <Text style={styles.historyDetailLabel}>Jam Masuk</Text>
+            <Text style={styles.historyDetailValue}>{startTime}</Text>
+          </View>
+          <View style={styles.historyDetailItem}>
+            <Text style={styles.historyDetailLabel}>Jam Keluar</Text>
+            <Text style={styles.historyDetailValue}>{endTime}</Text>
+          </View>
+          <View style={styles.historyDetailItem}>
+            <Text style={styles.historyDetailLabel}>Durasi</Text>
+            <Text style={styles.historyDetailValue}>{duration}</Text>
+          </View>
+        </View>
+
+        {status.attendanceData?.start_address && (
+          <View style={styles.locationContainer}>
+            <Ionicons name="location-outline" size={14} color={COLORS.text.secondary} />
+            <Text style={styles.locationText} numberOfLines={2}>
+              {status.attendanceData.start_address}
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   const renderHistoryList = () => {
-    if (formattedData.length === 0) {
+    if (attendanceStatuses.length === 0) {
       return renderEmptyState();
     }
     
     return (
       <View style={styles.historyList}>
+        {renderStatistics()}
         <ScrollView
           ref={scrollViewRef}
           contentContainerStyle={styles.historyListContent}
@@ -200,11 +237,7 @@ const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({
           contentInsetAdjustmentBehavior="never"
           style={{ flex: 1 }}
         >
-          {formattedData.map((item) => (
-            <View key={item.id}>
-              {renderHistoryCard(item)}
-            </View>
-          ))}
+          {attendanceStatuses.map((status) => renderAttendanceCard(status))}
         </ScrollView>
       </View>
     );
@@ -216,19 +249,19 @@ const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({
         <Text style={styles.historyTitle}>Riwayat Absensi (7 Hari Terakhir)</Text>
         <TouchableOpacity 
           style={styles.refreshHeaderButton}
-          onPress={loadWeeklyAttendance}
-          disabled={weeklyAttendanceLoading}
+          onPress={refetch}
+          disabled={loading}
         >
           <Ionicons 
             name="refresh" 
             size={20} 
-            color={weeklyAttendanceLoading ? COLORS.text.secondary : COLORS.primary} 
+            color={loading ? COLORS.text.secondary : COLORS.primary} 
           />
         </TouchableOpacity>
       </View>
       
-      {weeklyAttendanceLoading ? renderLoadingState() : 
-       weeklyAttendanceError ? renderErrorState() : 
+      {loading ? renderLoadingState() : 
+       error ? renderErrorState() : 
        renderHistoryList()}
     </View>
   );
@@ -325,6 +358,50 @@ const styles = {
     fontWeight: '500' as const,
     marginLeft: 4,
   },
+  statisticsContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  statisticsTitle: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: COLORS.text.primary,
+    marginBottom: 12,
+  },
+  statisticsGrid: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+  },
+  statItem: {
+    alignItems: 'center' as const,
+    flex: 1,
+  },
+  statIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: COLORS.text.primary,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
+    textAlign: 'center' as const,
+  },
   historyList: {
     flex: 1,
   },
@@ -378,33 +455,11 @@ const styles = {
     fontWeight: '500' as const,
     marginLeft: 4,
   },
-  verifiedBadge: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    backgroundColor: '#E8F5E8',
-    borderRadius: 8,
-  },
-  verifiedText: {
-    color: '#4CAF50',
+  reasonText: {
     fontSize: 10,
-    fontWeight: '500' as const,
-    marginLeft: 2,
-  },
-  unverifiedBadge: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    backgroundColor: '#FFF3E0',
-    borderRadius: 8,
-  },
-  unverifiedText: {
-    color: '#FF9800',
-    fontSize: 10,
-    fontWeight: '500' as const,
-    marginLeft: 2,
+    color: COLORS.text.secondary,
+    textAlign: 'right' as const,
+    maxWidth: 120,
   },
   historyDetails: {
     flexDirection: 'row' as const,
@@ -427,6 +482,20 @@ const styles = {
     fontWeight: '500' as const,
     color: COLORS.text.primary,
     textAlign: 'center' as const,
+  },
+  locationContainer: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  locationText: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
+    marginLeft: 4,
+    flex: 1,
   },
 };
 

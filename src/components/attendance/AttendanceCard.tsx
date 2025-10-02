@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,12 +9,14 @@ import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
 import { SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/spacing';
+import AttendanceDetailModal from './AttendanceDetailModal';
 
 interface AttendanceCardProps {
   type: string;
   time: string;
   address: string;
   image: string | null;
+  date?: string;
 }
 
 interface StatusInfo {
@@ -29,7 +31,17 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   time,
   address,
   image,
+  date,
 }) => {
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleCardPress = () => {
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+  };
   const getStatusInfo = (type: string): StatusInfo => {
     switch (type.toLowerCase()) {
       case 'check in':
@@ -77,7 +89,8 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
   const statusInfo = getStatusInfo(type);
 
   return (
-    <View style={styles.attendanceCard}>
+    <>
+      <TouchableOpacity style={styles.attendanceCard} onPress={handleCardPress} activeOpacity={0.7}>
       <View style={[styles.cardLeft, { borderLeftColor: statusInfo.borderColor }]}>
         <View style={[styles.iconContainer, { backgroundColor: statusInfo.bgColor }]}>
           <MaterialCommunityIcons 
@@ -119,7 +132,18 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
           </TouchableOpacity>
         )}
       </View>
-    </View>
+      </TouchableOpacity>
+
+      <AttendanceDetailModal
+        visible={modalVisible}
+        onClose={handleCloseModal}
+        type={type}
+        time={time}
+        address={address}
+        image={image || ''}
+        date={date}
+      />
+    </>
   );
 };
 

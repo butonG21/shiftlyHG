@@ -58,14 +58,13 @@ export const getLastWeekDateRange = (): DateRange => {
   };
 };
 
-// Helper function to generate array of dates for the last 7 days
+// Helper function to generate array of dates for the last 8 days (to include more historical data)
 export const getLastWeekDates = (): AttendanceFilter[] => {
   const dates: AttendanceFilter[] = [];
   const today = new Date();
   
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
+  for (let i = 7; i >= 0; i--) {
+    const date = new Date(today.getTime() - (i * 24 * 60 * 60 * 1000)); // Subtract milliseconds instead
     
     dates.push({
       date: date.getDate(),

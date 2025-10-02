@@ -68,10 +68,11 @@ export const DailySummary: React.FC<DailySummaryProps> = ({ summary }) => {
 
 const styles = StyleSheet.create({
   summaryCard: {
-    marginTop: SPACING.xl,
+    marginTop: SPACING.md,
     backgroundColor: 'white',
     borderRadius: BORDER_RADIUS.xl,
     ...SHADOWS.md,
+    marginBottom: SPACING.xl,
   },
   summaryContent: {
     padding: SPACING.lg,

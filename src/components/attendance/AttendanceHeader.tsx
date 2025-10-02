@@ -18,6 +18,7 @@ interface AttendanceHeaderProps {
   };
   onBackPress: () => void;
   selectedDate?: string;
+  selectedDateObject?: Date;
   datePickerVisible: boolean;
   onDatePickerToggle: () => void;
   onDateConfirm: DatePickerModalSingleProps['onConfirm'];
@@ -27,6 +28,7 @@ export const AttendanceHeader: React.FC<AttendanceHeaderProps> = ({
   insets,
   onBackPress,
   selectedDate,
+  selectedDateObject,
   datePickerVisible,
   onDatePickerToggle,
   onDateConfirm,
@@ -64,7 +66,7 @@ export const AttendanceHeader: React.FC<AttendanceHeaderProps> = ({
       <DatePickerModal
         visible={datePickerVisible}
         onDismiss={onDatePickerToggle}
-        date={new Date()}
+        date={selectedDateObject || new Date()}
         onConfirm={onDateConfirm}
         locale="en"
         mode="single"

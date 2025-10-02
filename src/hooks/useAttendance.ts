@@ -23,6 +23,7 @@ const useAttendance = () => {
       setError(null);
       const data = await fetchUserAttendance(user.uid);
       setAttendance(data);
+      setCurrentFilter(null); // Clear filter when loading today's data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch attendance');
     } finally {
@@ -64,11 +65,12 @@ const useAttendance = () => {
     }
   }, [user?.uid]);
 
-  useEffect(() => {
-    if (user?.uid) {
-      loadAttendance();
-    }
-  }, [user?.uid]);
+  // Remove automatic loading - let the component control when to load data
+  // useEffect(() => {
+  //   if (user?.uid) {
+  //     loadAttendance();
+  //   }
+  // }, [user?.uid]);
 
   return {
     attendance,
