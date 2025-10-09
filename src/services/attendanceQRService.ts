@@ -507,7 +507,7 @@ export const getTripReport = async (retryCount = 0): Promise<TripReportResponse>
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 30000, // Increased timeout for production
+        timeout: 45000, // Extended timeout for production environment
         validateStatus: (status) => {
           logStep('HTTP response status', status);
           return status < 500; // Accept 4xx errors
@@ -559,7 +559,7 @@ export const getTripReport = async (retryCount = 0): Promise<TripReportResponse>
     
     // Enhanced error logging for production debugging
     if (axios.isAxiosError(error)) {
-      logStep('Axios error details', {
+      const errorDetails = {
         message: error.message,
         code: error.code,
         status: error.response?.status,
@@ -567,8 +567,24 @@ export const getTripReport = async (retryCount = 0): Promise<TripReportResponse>
         responseData: error.response?.data,
         requestURL: error.config?.url,
         requestMethod: error.config?.method,
-        timeout: error.config?.timeout
-      });
+        timeout: error.config?.timeout,
+        headers: error.config?.headers,
+        baseURL: error.config?.baseURL,
+        isNetworkError: !error.response,
+        isTimeoutError: error.code === 'ECONNABORTED',
+        timestamp: new Date().toISOString()
+      };
+      
+      logStep('Axios error details', errorDetails);
+      
+      // Log specific error types for better debugging
+      if (error.code === 'ECONNABORTED') {
+        logStepWithNotification('Koneksi timeout. Periksa koneksi internet Anda.', errorDetails, true, 'warning');
+      } else if (!error.response) {
+        logStepWithNotification('Tidak dapat terhubung ke server. Periksa koneksi internet.', errorDetails, true, 'warning');
+      } else if (error.response.status >= 500) {
+        logStepWithNotification('Server sedang bermasalah. Mencoba lagi...', errorDetails, true, 'warning');
+      }
       
       // Retry on network errors or server errors (5xx)
       const shouldRetry = !error.response || error.response.status >= 500;
