@@ -6,7 +6,7 @@ import { STORAGE_KEYS } from '../constants/storage';
 
 // Constants
 const ATTENDANCE_API_BASE = 'http://attendance-api.shabuhachi.id/service';
-const DEVELOPMENT_MODE = __DEV__; // Automatically detect development mode
+const DEVELOPMENT_MODE = false; // Automatically detect development mode
 
 // Development dummy data
 const DUMMY_DATA = {
@@ -101,35 +101,128 @@ const generateFilename = (): string => {
   return `attendance_${year}${month}${day}_${hours}${minutes}${seconds}`;
 };
 
+// Callback function for user notifications
+let userNotificationCallback: ((message: string, type: 'success' | 'error' | 'warning' | 'info') => void) | null = null;
+
+// Set notification callback (to be called from UI components)
+export const setUserNotificationCallback = (callback: (message: string, type: 'success' | 'error' | 'warning' | 'info') => void) => {
+  userNotificationCallback = callback;
+};
+
 const logStep = (step: string, data?: any) => {
   console.log(`[ATTENDANCE QR] ${step}`, data ? JSON.stringify(data, null, 2) : '');
 };
 
-// Get current user ID
-const getCurrentUserId = async (): Promise<string> => {
-  if (DEVELOPMENT_MODE) {
-    logStep('Using dummy user ID for development');
-    return DUMMY_DATA.userid;
-  }
+// Enhanced logging with user notification for critical issues
+const logStepWithNotification = (step: string, data?: any, notifyUser = false, notificationType: 'success' | 'error' | 'warning' | 'info' = 'info') => {
+  console.log(`[ATTENDANCE QR] ${step}`, data ? JSON.stringify(data, null, 2) : '');
   
+  if (notifyUser && userNotificationCallback) {
+    userNotificationCallback(step, notificationType);
+  }
+};
+
+// Get current user ID with enhanced error handling and fallback
+const getCurrentUserId = async (): Promise<string> => {
   try {
-    const userProfile = await AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE);
-    if (userProfile) {
-      const user = JSON.parse(userProfile);
-      const userId = user.uid || user._id || user.username;
-      if (userId) {
-        logStep('User ID retrieved successfully', userId);
-        return userId;
-      }
+    logStep('Getting current user ID');
+    
+    if (DEVELOPMENT_MODE) {
+      logStep('Development mode: using dummy user ID');
+      return DUMMY_DATA.userid;
     }
-    logStep('User profile not found in AsyncStorage');
-    throw new Error('User profile not found. Please login again.');
+
+    // Check if AsyncStorage is available
+    if (typeof AsyncStorage === 'undefined') {
+      logStep('AsyncStorage is not available');
+      throw new Error('AsyncStorage is not available');
+    }
+
+    logStep('Fetching user profile from AsyncStorage');
+    const userProfile = await AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+    
+    if (!userProfile) {
+      logStep('No user profile found in AsyncStorage');
+      
+      // Try to get token as fallback
+       const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+       if (token) {
+         logStep('Found token, but no user profile - this might indicate a login issue');
+         // Try to extract user info from token if it's a JWT
+         try {
+           const tokenParts = token.split('.');
+           if (tokenParts.length === 3) {
+             const payload = JSON.parse(atob(tokenParts[1]));
+             const userId = payload.uid || payload.user_id || payload.id || payload.sub;
+             if (userId) {
+               logStep('Extracted user ID from token', userId);
+               return userId;
+             }
+           }
+         } catch (tokenError) {
+           logStep('Could not extract user ID from token', tokenError);
+         }
+       }
+       
+       logStepWithNotification('Data pengguna tidak ditemukan. Silakan login ulang.', null, true, 'error');
+       throw new Error('No user profile or valid token found');
+    }
+
+    logStep('User profile found, parsing JSON');
+    let parsedProfile;
+    try {
+      parsedProfile = JSON.parse(userProfile);
+      logStep('Parsed user profile', parsedProfile);
+    } catch (parseError) {
+      logStep('JSON parsing error - corrupted user profile data', parseError);
+      
+      // Try to clear corrupted data and re-authenticate
+      await AsyncStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+      throw new Error('Corrupted user profile data - cleared from storage');
+    }
+    
+    // Try different possible user ID fields with priority order
+    const userId = parsedProfile.uid || 
+                   parsedProfile._id || 
+                   parsedProfile.id || 
+                   parsedProfile.user_id ||
+                   parsedProfile.username ||
+                   parsedProfile.email;
+    
+    if (!userId) {
+      logStep('No valid user ID found in profile', parsedProfile);
+      
+      // Log available fields for debugging
+      const availableFields = Object.keys(parsedProfile);
+      logStep('Available fields in user profile', availableFields);
+      
+      throw new Error('No valid user ID found in profile');
+    }
+
+    // Validate the user ID format
+    const userIdStr = String(userId).trim();
+    if (userIdStr === '' || userIdStr === 'null' || userIdStr === 'undefined') {
+      logStep('Invalid user ID format', { userId, userIdStr });
+      throw new Error('Invalid user ID format');
+    }
+
+    logStep('User ID successfully retrieved', userIdStr);
+    return userIdStr;
   } catch (error) {
     logStep('Error getting user ID', error);
-    if (error instanceof Error) {
-      throw new Error(`Failed to get user ID: ${error.message}`);
+    
+    if (error instanceof SyntaxError) {
+      logStep('JSON parsing error - corrupted user profile data');
+    } else if (error instanceof Error) {
+      logStep('Error details', {
+        message: error.message,
+        stack: error.stack
+      });
     }
-    throw new Error('Failed to get user ID: Unknown error');
+    
+    // In production, we might want to trigger a re-login flow
+    // For now, we'll throw the error to be handled by the calling function
+    throw error;
   }
 };
 
@@ -377,18 +470,32 @@ export const submitAttendanceWithPhoto = async (
   }
 };
 
-// Get trip report data
-export const getTripReport = async (): Promise<TripReportResponse> => {
+// Helper function for retry mechanism
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Get trip report data with retry mechanism
+export const getTripReport = async (retryCount = 0): Promise<TripReportResponse> => {
+  const maxRetries = 3;
+  const retryDelay = 1000 * (retryCount + 1); // Progressive delay: 1s, 2s, 3s
+  
   try {
-    logStep('Getting trip report data');
+    logStep('Getting trip report data', { attempt: retryCount + 1, maxRetries: maxRetries + 1 });
     
     const userid = await getCurrentUserId();
+    logStep('User ID obtained for trip report', userid);
+    
+    // Validate userid before proceeding
+    if (!userid || userid.trim() === '') {
+      logStepWithNotification('Tidak dapat mengambil ID pengguna. Silakan login ulang.', null, true, 'error');
+      throw new Error('Invalid user ID');
+    }
     
     const requestData: TripReportRequest = {
       userid,
     };
 
     logStep('Sending trip report request', requestData);
+    logStep('API endpoint', `${ATTENDANCE_API_BASE}/getTripReport1.php`);
 
     const formData = new FormData();
     formData.append('userid', userid);
@@ -400,12 +507,19 @@ export const getTripReport = async (): Promise<TripReportResponse> => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 20000, // Increased timeout for production
-        validateStatus: (status) => status < 500, // Accept 4xx errors
+        timeout: 30000, // Increased timeout for production
+        validateStatus: (status) => {
+          logStep('HTTP response status', status);
+          return status < 500; // Accept 4xx errors
+        },
       }
     );
 
-    logStep('Trip report response received', response.data);
+    logStep('Trip report response received', {
+      status: response.status,
+      statusText: response.statusText,
+      data: response.data
+    });
     
     if (response.data && response.data.success) {
       logStep('Trip report successful', {
@@ -415,61 +529,98 @@ export const getTripReport = async (): Promise<TripReportResponse> => {
       });
       return response.data;
     } else {
-      logStep('Trip report failed or no data', response.data);
+      logStep('Trip report failed or no data', {
+        responseData: response.data,
+        responseStatus: response.status
+      });
+      
+      // Check if it's a valid response structure but with success: false
+      if (response.data && typeof response.data === 'object') {
+        logStep('Returning response data even though success is false');
+        return {
+          ...response.data,
+          success: false
+        } as TripReportResponse;
+      }
+      
+      // If we get here and have retries left, try again
+      if (retryCount < maxRetries) {
+        logStepWithNotification(`Gagal mengambil data absensi, mencoba lagi... (${retryCount + 1}/${maxRetries + 1})`, { retryCount, maxRetries }, true, 'warning');
+        await delay(retryDelay);
+        return getTripReport(retryCount + 1);
+      }
+      
       // Return empty/default data instead of throwing error
-      return {
-        success: false,
-        mset_date: '',
-        mset_date_breakout: '',
-        mset_date_breakin: '',
-        mset_date_clockout: '',
-        mset_start_time: '00:00:00',
-        mset_start_address: '',
-        mset_start_image: '',
-        mset_break_out_time: '00:00:00',
-        mset_break_out_address: null,
-        mset_break_out_image: null,
-        mset_break_in_time: '00:00:00',
-        mset_break_in_address: null,
-        mset_break_in_image: null,
-        mset_end_time: '00:00:00',
-        mset_end_address: null,
-        mset_end_image: null,
-      };
+      logStepWithNotification('Data absensi hari ini belum tersedia. Silakan coba lagi nanti.', null, true, 'info');
+      return getDefaultTripReportResponse();
     }
   } catch (error) {
-    logStep('Error in trip report', error);
+    logStep('Error in trip report', { error, attempt: retryCount + 1 });
     
-    // Return default data instead of throwing error to prevent UI crashes
+    // Enhanced error logging for production debugging
     if (axios.isAxiosError(error)) {
-      logStep('Network error in trip report', {
+      logStep('Axios error details', {
         message: error.message,
         code: error.code,
         status: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data,
+        requestURL: error.config?.url,
+        requestMethod: error.config?.method,
+        timeout: error.config?.timeout
       });
+      
+      // Retry on network errors or server errors (5xx)
+      const shouldRetry = !error.response || error.response.status >= 500;
+      if (shouldRetry && retryCount < maxRetries) {
+        logStepWithNotification(`Koneksi bermasalah, mencoba lagi... (${retryCount + 1}/${maxRetries + 1})`, { retryCount, maxRetries }, true, 'warning');
+        await delay(retryDelay);
+        return getTripReport(retryCount + 1);
+      }
+    } else if (error instanceof Error) {
+      logStep('General error details', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      
+      // Retry on general errors if we have retries left
+      if (retryCount < maxRetries) {
+        logStepWithNotification(`Terjadi kesalahan, mencoba lagi... (${retryCount + 1}/${maxRetries + 1})`, { retryCount, maxRetries }, true, 'warning');
+        await delay(retryDelay);
+        return getTripReport(retryCount + 1);
+      }
+    } else {
+      logStep('Unknown error type', error);
     }
     
     // Return empty data structure to maintain UI consistency
-    return {
-      success: false,
-      mset_date: '',
-      mset_date_breakout: '',
-      mset_date_breakin: '',
-      mset_date_clockout: '',
-      mset_start_time: '00:00:00',
-      mset_start_address: '',
-      mset_start_image: '',
-      mset_break_out_time: '00:00:00',
-      mset_break_out_address: null,
-      mset_break_out_image: null,
-      mset_break_in_time: '00:00:00',
-      mset_break_in_address: null,
-      mset_break_in_image: null,
-      mset_end_time: '00:00:00',
-      mset_end_address: null,
-      mset_end_image: null,
-    };
+    logStepWithNotification('Tidak dapat mengambil data absensi. Silakan coba lagi nanti.', null, true, 'error');
+    return getDefaultTripReportResponse();
   }
+};
+
+// Helper function to get default trip report response
+const getDefaultTripReportResponse = (): TripReportResponse => {
+  return {
+    success: false,
+    mset_date: '',
+    mset_date_breakout: '',
+    mset_date_breakin: '',
+    mset_date_clockout: '',
+    mset_start_time: '00:00:00',
+    mset_start_address: '',
+    mset_start_image: '',
+    mset_break_out_time: '00:00:00',
+    mset_break_out_address: null,
+    mset_break_out_image: null,
+    mset_break_in_time: '00:00:00',
+    mset_break_in_address: null,
+    mset_break_in_image: null,
+    mset_end_time: '00:00:00',
+    mset_end_address: null,
+    mset_end_image: null,
+  };
 };
 
 // Complete attendance flow

@@ -28,7 +28,7 @@ import AttendanceHistory from '../components/attendance/AttendanceHistory';
 import TimeDisplay from '../components/TimeDisplay';
 
 // Services
-import attendanceQRService, { TripReportResponse } from '../services/attendanceQRService';
+import attendanceQRService, { TripReportResponse, setUserNotificationCallback } from '../services/attendanceQRService';
 import { fetchUserAttendance } from '../services/attendanceService';
 import apiClient from '../services/api';
 
@@ -127,6 +127,33 @@ export const QRAttendanceScreen: React.FC<QRAttendanceScreenProps> = ({ navigati
     weeklyError,
     loadWeeklyAttendance,
   } = useAttendance();
+
+  // Setup notification callback for attendanceQRService
+  useEffect(() => {
+    // Setup callback to show notifications from service layer
+    setUserNotificationCallback((message: string, type: 'success' | 'error' | 'warning' | 'info') => {
+      switch (type) {
+        case 'success':
+          showSuccess(message);
+          break;
+        case 'error':
+          showError(message);
+          break;
+        case 'warning':
+          showInfo(message); // Use showInfo for warnings as it's more user-friendly
+          break;
+        case 'info':
+        default:
+          showInfo(message);
+          break;
+      }
+    });
+
+    // Cleanup callback on unmount
+    return () => {
+      setUserNotificationCallback(() => {});
+    };
+  }, [showSuccess, showError, showInfo]);
 
   // Load trip report data on component mount with retry mechanism
   useEffect(() => {
