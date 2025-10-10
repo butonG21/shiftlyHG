@@ -329,7 +329,7 @@ const HomeScreen: React.FC = () => {
       icon: 'account-edit',
       color: COLORS.secondary,
       onPress: () => {
-        console.log('Navigate to profile edit');
+        navigation.navigate('Profile' as never);
       },
     },
     {

@@ -24,6 +24,7 @@ import Animated, {
 import LoginScreen from '../src/screens/LoginScreen';
 import HomeScreen from '../src/screens/HomeScreen';
 import ScheduleScreen from '../src/screens/ScheduleScreen';
+import ProfileScreen from '../src/screens/ProfileScreen';
 import AttendanceScreen from '../src/screens/AttendanceScreen';
 import { QRAttendanceScreen } from '../src/screens/QRAttendanceScreen';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -294,6 +295,14 @@ const AppNavigator: React.FC = () => {
             <Stack.Screen
               name="Schedule"
               component={ScheduleScreen}
+              options={{
+                headerShown: false,
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="Profile"
+              component={ProfileScreen}
               options={{
                 headerShown: false,
                 animation: 'slide_from_right',

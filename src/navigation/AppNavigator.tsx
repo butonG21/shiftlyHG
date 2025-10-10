@@ -1,11 +1,13 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AttendanceScreen from '../screens/AttendanceScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 export type RootStackParamList = {
   Home: undefined;
   Attendance: { selectedDate?: string };
   Schedule: undefined;
+  Profile: undefined;
   // ...add other screens as needed
 };
 
@@ -20,6 +22,11 @@ const AppNavigator = () => {
       <Stack.Screen 
         name="Attendance" 
         component={AttendanceScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="Profile" 
+        component={ProfileScreen}
         options={{ headerShown: false }}
       />
       {/* ...other screen components... */}
