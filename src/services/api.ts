@@ -3,7 +3,7 @@ import axios, { AxiosResponse, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../constants/storage';
 
-const BASE_URL = 'https://jadwal-backend-production.up.railway.app/api/v1';
+const BASE_URL = 'https://api.shiftly.my.id/api/v1';
 
 // Create axios instance with default config
 const apiClient = axios.create({
